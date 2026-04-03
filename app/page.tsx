@@ -1,101 +1,203 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useRef } from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+
+export default function LandingPage() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Subtle particle ambient for the landing page
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let raf: number;
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    const particles: { x: number; y: number; vx: number; vy: number; r: number; o: number; life: number; maxLife: number }[] = [];
+
+    const spawn = () => {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: canvas.height * 0.3 + Math.random() * canvas.height * 0.5,
+        vx: (Math.random() - 0.5) * 0.2,
+        vy: -0.1 - Math.random() * 0.25,
+        r: 0.5 + Math.random() * 1.2,
+        o: 0,
+        life: 0,
+        maxLife: 250 + Math.random() * 350,
+      });
+    };
+
+    for (let i = 0; i < 25; i++) {
+      spawn();
+      particles[particles.length - 1].life = Math.random() * particles[particles.length - 1].maxLife;
+    }
+
+    let frame = 0;
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      frame++;
+      if (frame % 12 === 0 && particles.length < 45) spawn();
+
+      particles.forEach((p, i) => {
+        p.life++;
+        p.x += p.vx;
+        p.y += p.vy;
+        const prog = p.life / p.maxLife;
+        p.o = prog < 0.2 ? (prog / 0.2) * 0.4 : prog > 0.8 ? ((1 - prog) / 0.2) * 0.4 : 0.4;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(160, 180, 220, ${p.o * 0.4})`;
+        ctx.fill();
+        if (p.life >= p.maxLife) particles.splice(i, 1);
+      });
+
+      raf = requestAnimationFrame(draw);
+    };
+    raf = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", resize);
+    };
+  }, []);
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div
+      className="fixed inset-0 flex flex-col items-center justify-center overflow-hidden"
+      style={{ background: "radial-gradient(ellipse at 40% 60%, #1a1f2e 0%, #0f1115 55%, #090b0f 100%)" }}
+    >
+      {/* Ambient canvas */}
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 pointer-events-none"
+        style={{ opacity: 0.6 }}
+      />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      {/* Grain */}
+      <div className="grain-overlay" style={{ opacity: 0.025 }} />
+
+      {/* Vignette */}
+      <div className="vignette" />
+
+      {/* Content */}
+      <motion.div
+        className="relative z-10 flex flex-col items-center text-center"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1.2, ease: "easeOut" }}
+      >
+        {/* Wordmark */}
+        <motion.h1
+          className="font-light mb-4 tracking-tight"
+          style={{
+            fontSize: 52,
+            color: "rgba(255,255,255,0.88)",
+            letterSpacing: "-0.025em",
+            lineHeight: 1,
+          }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, delay: 0.2 }}
+        >
+          bluehour
+        </motion.h1>
+
+        {/* Tagline */}
+        <motion.p
+          className="font-light mb-16"
+          style={{
+            color: "rgba(255,255,255,0.35)",
+            fontSize: 15,
+            letterSpacing: "0.05em",
+          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 0.5 }}
+        >
+          a place to settle in
+        </motion.p>
+
+        {/* CTA */}
+        <motion.div
+          className="flex flex-col items-center gap-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 0.8 }}
+        >
+          <Link
+            href="/focus"
+            className="no-select transition-all duration-500"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              padding: "12px 44px",
+              borderRadius: 999,
+              background: "rgba(255,255,255,0.07)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              color: "rgba(255,255,255,0.88)",
+              fontSize: 14,
+              fontWeight: 300,
+              letterSpacing: "0.06em",
+              textDecoration: "none",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.11)";
+              (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.2)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.07)";
+              (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.12)";
+            }}
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            begin
+          </Link>
+
+          <Link
+            href="/history"
+            className="font-light transition-all duration-400 no-select"
+            style={{
+              color: "rgba(255,255,255,0.28)",
+              fontSize: 13,
+              letterSpacing: "0.04em",
+              textDecoration: "none",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.5)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.28)";
+            }}
           >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+            history
+          </Link>
+        </motion.div>
+      </motion.div>
+
+      {/* Bottom hint */}
+      <motion.p
+        className="absolute bottom-8 font-light no-select"
+        style={{
+          color: "rgba(255,255,255,0.18)",
+          fontSize: 11,
+          letterSpacing: "0.08em",
+        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1, delay: 1.4 }}
+      >
+        best in fullscreen on a second monitor
+      </motion.p>
     </div>
   );
 }
