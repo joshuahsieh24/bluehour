@@ -7,7 +7,6 @@ import { motion } from "framer-motion";
 export default function LandingPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Blue-hour atmospheric particles — drifting upward, cool toned
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -34,17 +33,19 @@ export default function LandingPage() {
 
     const spawn = (): Particle => ({
       x: Math.random() * (canvas?.width ?? 1920),
-      y: (canvas?.height ?? 1080) * 0.5 + Math.random() * (canvas?.height ?? 1080) * 0.45,
-      vx: (Math.random() - 0.5) * 0.15,
-      vy: -0.08 - Math.random() * 0.18,
-      r: 0.4 + Math.random() * 1.4,
+      // Spawn in the lower half — they drift upward and fade naturally
+      y: (canvas?.height ?? 1080) * 0.55 + Math.random() * (canvas?.height ?? 1080) * 0.4,
+      vx: (Math.random() - 0.5) * 0.1,
+      vy: -0.06 - Math.random() * 0.14,
+      r: 0.3 + Math.random() * 1.1,
       o: 0,
       life: 0,
-      maxLife: 320 + Math.random() * 400,
-      hue: 220 + Math.random() * 50, // blue to indigo range
+      maxLife: 400 + Math.random() * 500,
+      hue: 215 + Math.random() * 55,
     });
 
-    for (let i = 0; i < 35; i++) {
+    // Seed with staggered lifetimes so page doesn't start empty
+    for (let i = 0; i < 28; i++) {
       const p = spawn();
       p.life = Math.random() * p.maxLife;
       particles.push(p);
@@ -54,8 +55,7 @@ export default function LandingPage() {
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       frame++;
-
-      if (frame % 10 === 0 && particles.length < 55) particles.push(spawn());
+      if (frame % 14 === 0 && particles.length < 40) particles.push(spawn());
 
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
@@ -63,15 +63,16 @@ export default function LandingPage() {
         p.x += p.vx;
         p.y += p.vy;
         const prog = p.life / p.maxLife;
-        p.o = prog < 0.18
-          ? (prog / 0.18) * 0.5
-          : prog > 0.82
-          ? ((1 - prog) / 0.18) * 0.5
-          : 0.5;
+        // Softer fade — max opacity is lower so they read as atmosphere, not sparks
+        p.o = prog < 0.2
+          ? (prog / 0.2) * 0.32
+          : prog > 0.78
+          ? ((1 - prog) / 0.22) * 0.32
+          : 0.32;
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${p.hue}, 70%, 78%, ${p.o * 0.35})`;
+        ctx.fillStyle = `hsla(${p.hue}, 60%, 80%, ${p.o * 0.7})`;
         ctx.fill();
 
         if (p.life >= p.maxLife) particles.splice(i, 1);
@@ -91,72 +92,98 @@ export default function LandingPage() {
     <div
       className="fixed inset-0 flex flex-col items-center justify-center overflow-hidden"
       style={{
-        // Blue hour: deep indigo sky with warm horizon glow
+        // Richer blue-hour sky — more violet in the upper register,
+        // warmer indigo mid, soft teal-blue at the "horizon"
         background: [
-          "radial-gradient(ellipse at 50% 110%, rgba(120, 60, 100, 0.45) 0%, transparent 55%)",
-          "radial-gradient(ellipse at 20% 85%, rgba(80, 40, 120, 0.3) 0%, transparent 45%)",
-          "radial-gradient(ellipse at 80% 90%, rgba(60, 80, 160, 0.25) 0%, transparent 40%)",
-          "linear-gradient(to bottom, #0d1540 0%, #131d52 18%, #1a1f5e 34%, #17235a 50%, #0f1a42 72%, #090e24 100%)",
+          "radial-gradient(ellipse at 50% 100%, rgba(100, 45, 85, 0.38) 0%, transparent 52%)",
+          "radial-gradient(ellipse at 22% 80%, rgba(65, 35, 110, 0.22) 0%, transparent 42%)",
+          "radial-gradient(ellipse at 78% 88%, rgba(45, 65, 140, 0.18) 0%, transparent 38%)",
+          "linear-gradient(to bottom, #0a1235 0%, #10185a 22%, #18206a 40%, #15215e 58%, #0d1845 78%, #080f2c 100%)",
         ].join(", "),
       }}
     >
-      {/* Horizon glow — the warm band at blue hour */}
+      {/* Horizon warmth — softer, higher up so no hard bottom band */}
       <div
-        className="absolute pointer-events-none"
+        className="absolute inset-0 pointer-events-none"
         style={{
-          bottom: "12%",
-          left: 0,
-          right: 0,
-          height: "28%",
           background:
-            "radial-gradient(ellipse at 45% 100%, rgba(180, 90, 130, 0.22) 0%, rgba(120, 70, 160, 0.12) 40%, transparent 70%)",
+            "radial-gradient(ellipse at 48% 92%, rgba(160, 80, 120, 0.18) 0%, rgba(100, 60, 150, 0.08) 35%, transparent 60%)",
         }}
       />
 
-      {/* Faint star field — tiny static dots */}
+      {/* Mid-sky atmospheric depth */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 55%, rgba(60, 80, 180, 0.1) 0%, transparent 55%)",
+        }}
+      />
+
+      {/* Stars — varied opacity, scattered across upper two-thirds only */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage: [
-            "radial-gradient(1px 1px at 12% 18%, rgba(200,220,255,0.4) 0%, transparent 100%)",
-            "radial-gradient(1px 1px at 35% 8%, rgba(200,220,255,0.3) 0%, transparent 100%)",
-            "radial-gradient(1px 1px at 58% 22%, rgba(200,220,255,0.35) 0%, transparent 100%)",
-            "radial-gradient(1px 1px at 74% 11%, rgba(200,220,255,0.25) 0%, transparent 100%)",
-            "radial-gradient(1px 1px at 88% 28%, rgba(200,220,255,0.3) 0%, transparent 100%)",
-            "radial-gradient(1px 1px at 22% 38%, rgba(200,220,255,0.2) 0%, transparent 100%)",
-            "radial-gradient(1px 1px at 65% 5%, rgba(200,220,255,0.4) 0%, transparent 100%)",
-            "radial-gradient(1px 1px at 91% 42%, rgba(200,220,255,0.22) 0%, transparent 100%)",
-            "radial-gradient(1px 1px at 48% 32%, rgba(200,220,255,0.3) 0%, transparent 100%)",
-            "radial-gradient(1.5px 1.5px at 78% 58%, rgba(200,220,255,0.18) 0%, transparent 100%)",
+            "radial-gradient(1px 1px at 8%  14%, rgba(210,225,255,0.55) 0%, transparent 100%)",
+            "radial-gradient(1px 1px at 19% 7%,  rgba(210,225,255,0.35) 0%, transparent 100%)",
+            "radial-gradient(1px 1px at 33% 19%, rgba(210,225,255,0.28) 0%, transparent 100%)",
+            "radial-gradient(1px 1px at 47% 4%,  rgba(210,225,255,0.45) 0%, transparent 100%)",
+            "radial-gradient(1px 1px at 61% 13%, rgba(210,225,255,0.32) 0%, transparent 100%)",
+            "radial-gradient(1px 1px at 72% 6%,  rgba(210,225,255,0.22) 0%, transparent 100%)",
+            "radial-gradient(1px 1px at 84% 21%, rgba(210,225,255,0.4)  0%, transparent 100%)",
+            "radial-gradient(1px 1px at 93% 9%,  rgba(210,225,255,0.3)  0%, transparent 100%)",
+            "radial-gradient(1px 1px at 26% 32%, rgba(210,225,255,0.18) 0%, transparent 100%)",
+            "radial-gradient(1px 1px at 55% 28%, rgba(210,225,255,0.24) 0%, transparent 100%)",
+            "radial-gradient(1px 1px at 79% 36%, rgba(210,225,255,0.16) 0%, transparent 100%)",
+            "radial-gradient(1.5px 1.5px at 41% 11%, rgba(220,235,255,0.6) 0%, transparent 100%)",
           ].join(", "),
+          // Fade stars out toward the horizon so they feel sky-accurate
+          maskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 55%, transparent 78%)",
+          WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 55%, transparent 78%)",
         }}
       />
 
-      {/* Ambient particle canvas */}
+      {/* Particle canvas — atmospheric dust rising from below */}
       <canvas
         ref={canvasRef}
         className="absolute inset-0 pointer-events-none"
-        style={{ opacity: 0.7 }}
+        style={{ opacity: 0.55 }}
       />
 
-      {/* Atmospheric depth gradient — top fade */}
+      {/* Soft bloom behind the content area — the "evening air" around the wordmark */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          top: "28%",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: 480,
+          height: 260,
+          background:
+            "radial-gradient(ellipse at 50% 45%, rgba(80, 110, 220, 0.12) 0%, rgba(60, 80, 180, 0.06) 50%, transparent 75%)",
+          filter: "blur(24px)",
+        }}
+      />
+
+      {/* Top edge darkening — subtle, not a band */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "linear-gradient(to bottom, rgba(6,9,24,0.5) 0%, transparent 30%, transparent 70%, rgba(4,6,16,0.6) 100%)",
+            "linear-gradient(to bottom, rgba(4,7,20,0.55) 0%, rgba(4,7,20,0.1) 18%, transparent 35%, transparent 80%, rgba(4,7,20,0.25) 100%)",
         }}
       />
 
       {/* Grain */}
-      <div className="grain-overlay" style={{ opacity: 0.02 }} />
+      <div className="grain-overlay" style={{ opacity: 0.018 }} />
 
       {/* Content */}
       <motion.div
         className="relative z-10 flex flex-col items-center text-center"
-        initial={{ opacity: 0, y: 12 }}
+        initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.4, ease: "easeOut" }}
+        transition={{ duration: 1.5, ease: "easeOut" }}
       >
         {/* Wordmark */}
         <motion.h1
@@ -165,12 +192,17 @@ export default function LandingPage() {
             fontSize: 54,
             letterSpacing: "-0.03em",
             lineHeight: 1,
-            color: "rgba(210, 225, 255, 0.92)",
-            textShadow: "0 0 60px rgba(120, 140, 220, 0.35)",
+            color: "rgba(205, 222, 255, 0.9)",
+            // Layered glow: soft blue halo + faint indigo outer
+            textShadow: [
+              "0 0 40px rgba(100, 130, 230, 0.4)",
+              "0 0 90px rgba(70, 90, 200, 0.18)",
+              "0 2px 12px rgba(0, 0, 30, 0.5)",
+            ].join(", "),
           }}
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.1, delay: 0.25 }}
+          transition={{ duration: 1.2, delay: 0.2 }}
         >
           bluehour
         </motion.h1>
@@ -179,13 +211,13 @@ export default function LandingPage() {
         <motion.p
           className="font-light mb-14"
           style={{
-            color: "rgba(170, 190, 240, 0.45)",
-            fontSize: 14,
-            letterSpacing: "0.08em",
+            color: "rgba(160, 185, 240, 0.42)",
+            fontSize: 13,
+            letterSpacing: "0.09em",
           }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 1.1, delay: 0.55 }}
+          transition={{ duration: 1.2, delay: 0.5 }}
         >
           a place to settle in
         </motion.p>
@@ -203,30 +235,34 @@ export default function LandingPage() {
             style={{
               display: "inline-flex",
               alignItems: "center",
-              padding: "11px 46px",
+              padding: "10px 44px",
               borderRadius: 999,
-              background: "rgba(120, 150, 220, 0.1)",
-              border: "1px solid rgba(160, 190, 255, 0.2)",
-              color: "rgba(200, 220, 255, 0.88)",
+              // Glass pill — picks up the sky colour behind it
+              background: "rgba(100, 130, 210, 0.09)",
+              border: "1px solid rgba(150, 180, 255, 0.18)",
+              color: "rgba(195, 215, 255, 0.85)",
               fontSize: 13,
               fontWeight: 300,
-              letterSpacing: "0.08em",
+              letterSpacing: "0.09em",
               textDecoration: "none",
-              transition: "all 500ms ease",
-              backdropFilter: "blur(8px)",
-              WebkitBackdropFilter: "blur(8px)",
+              transition: "background 500ms ease, border-color 500ms ease, color 400ms ease, box-shadow 500ms ease",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              boxShadow: "0 1px 24px rgba(60, 80, 200, 0.1), inset 0 1px 0 rgba(255,255,255,0.06)",
             }}
             onMouseEnter={(e) => {
               const el = e.currentTarget as HTMLElement;
-              el.style.background = "rgba(120, 150, 220, 0.18)";
-              el.style.borderColor = "rgba(160, 190, 255, 0.35)";
-              el.style.color = "rgba(220, 235, 255, 0.95)";
+              el.style.background = "rgba(100, 130, 210, 0.16)";
+              el.style.borderColor = "rgba(160, 190, 255, 0.3)";
+              el.style.color = "rgba(215, 230, 255, 0.95)";
+              el.style.boxShadow = "0 1px 32px rgba(80, 110, 220, 0.2), inset 0 1px 0 rgba(255,255,255,0.08)";
             }}
             onMouseLeave={(e) => {
               const el = e.currentTarget as HTMLElement;
-              el.style.background = "rgba(120, 150, 220, 0.1)";
-              el.style.borderColor = "rgba(160, 190, 255, 0.2)";
-              el.style.color = "rgba(200, 220, 255, 0.88)";
+              el.style.background = "rgba(100, 130, 210, 0.09)";
+              el.style.borderColor = "rgba(150, 180, 255, 0.18)";
+              el.style.color = "rgba(195, 215, 255, 0.85)";
+              el.style.boxShadow = "0 1px 24px rgba(60, 80, 200, 0.1), inset 0 1px 0 rgba(255,255,255,0.06)";
             }}
           >
             begin
@@ -236,17 +272,17 @@ export default function LandingPage() {
             href="/history"
             className="font-light no-select"
             style={{
-              color: "rgba(150, 175, 230, 0.32)",
+              color: "rgba(140, 168, 225, 0.3)",
               fontSize: 12,
               letterSpacing: "0.06em",
               textDecoration: "none",
-              transition: "color 400ms ease",
+              transition: "color 450ms ease",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.color = "rgba(170, 195, 240, 0.6)";
+              (e.currentTarget as HTMLElement).style.color = "rgba(165, 192, 240, 0.58)";
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.color = "rgba(150, 175, 230, 0.32)";
+              (e.currentTarget as HTMLElement).style.color = "rgba(140, 168, 225, 0.3)";
             }}
           >
             history
@@ -256,15 +292,15 @@ export default function LandingPage() {
 
       {/* Bottom hint */}
       <motion.p
-        className="absolute bottom-8 font-light no-select"
+        className="absolute bottom-7 font-light no-select"
         style={{
-          color: "rgba(140, 165, 220, 0.2)",
+          color: "rgba(130, 158, 220, 0.18)",
           fontSize: 10,
           letterSpacing: "0.1em",
         }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 1, delay: 1.6 }}
+        transition={{ duration: 1.2, delay: 1.7 }}
       >
         best in fullscreen on a second monitor
       </motion.p>

@@ -62,8 +62,15 @@ export default function SceneBackground({ scene, paused = false, dimmed = false 
 
       {/* ── 2. Video background ─────────────────────────────────────────────── */}
       {scene.videoSrc && (
-        <>
-          {/* The actual <video> element — hidden until ready */}
+        // Single video element — loads in place, fades in when ready.
+        // No duplicate elements or competing CSS transforms that cause jitter.
+        <motion.div
+          key={`video-layer-${scene.id}`}
+          className="absolute inset-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: showVideo ? 1 : 0 }}
+          transition={{ duration: 1.4, ease: "easeInOut" }}
+        >
           <video
             ref={videoRef}
             key={`video-${scene.id}`}
@@ -74,53 +81,17 @@ export default function SceneBackground({ scene, paused = false, dimmed = false 
             playsInline
             preload="auto"
             onCanPlay={() => setVideoReady(true)}
-            onError={() => {
-              // Silent fail — fall back to gradient/image
-              setVideoError(true);
-            }}
-            style={{ display: "none" }}
+            onError={() => setVideoError(true)}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ transform: "scale(1.06)" }}
           />
 
-          <AnimatePresence>
-            {showVideo && (
-              <motion.div
-                key={`video-layer-${scene.id}`}
-                className="absolute inset-0"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 1.4, ease: "easeInOut" }}
-              >
-                {/* Video element rendered visually — scale to fill */}
-                <video
-                  src={scene.videoSrc}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  ref={(el) => {
-                    // Pause/resume this display video too
-                    if (!el) return;
-                    if (paused) el.pause();
-                    else el.play().catch(() => {});
-                  }}
-                  className={`absolute inset-0 w-full h-full object-cover ${
-                    paused ? "" : "animate-drift-slow"
-                  }`}
-                  style={{ transform: "scale(1.06)" }}
-                />
-
-                {/* Video-specific darkening overlay — keeps timer readable */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background: `rgba(0,0,0,${dim})`,
-                  }}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </>
+          {/* Video-specific darkening overlay — keeps timer readable */}
+          <div
+            className="absolute inset-0"
+            style={{ background: `rgba(0,0,0,${dim})` }}
+          />
+        </motion.div>
       )}
 
       {/* ── 3. Still image fallback (when no video) ─────────────────────────── */}

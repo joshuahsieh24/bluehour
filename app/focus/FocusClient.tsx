@@ -143,8 +143,15 @@ function reducer(state: State, action: Action): State {
     }
     case "COMPLETE":
       return { ...state, phase: "complete" };
-    case "TOGGLE_MUTE":
-      return { ...state, muted: !state.muted };
+    case "TOGGLE_MUTE": {
+      const newMuted = !state.muted;
+      return {
+        ...state,
+        muted: newMuted,
+        // Clear the autoplay block once the user unmutes so the banner hides
+        autoplayBlocked: newMuted ? state.autoplayBlocked : false,
+      };
+    }
     case "SET_OVERLAY_MODE":
       return { ...state, overlayMode: action.m };
     case "SHOW_END_MODAL":
@@ -165,7 +172,9 @@ function reducer(state: State, action: Action): State {
     case "DISCARD_RECOVERY":
       return { ...state, recoverySession: null };
     case "AUTOPLAY_BLOCKED":
-      return { ...state, autoplayBlocked: true };
+      // Also mute state so TOGGLE_MUTE can flip it back to false,
+      // which triggers AudioController's re-play attempt
+      return { ...state, autoplayBlocked: true, muted: true };
     case "TICK":
       return { ...state, elapsed: action.elapsed };
     case "GO_AGAIN":
