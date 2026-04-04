@@ -1,0 +1,4 @@
+# Large media assets are served from GitHub CDN (raw.githubusercontent.com)
+# Excluding them keeps the Vercel deployment under the upload size limit.
+public/audio/
+public/scenes/
