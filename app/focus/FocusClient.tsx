@@ -383,6 +383,7 @@ export default function FocusClient() {
       interruptions: state.session.interruptions,
     });
     dispatch({ type: "GO_AGAIN" });
+    setSidebarOpen(true); // return to setup mode naturally
   };
 
   const remaining = state.session ? getRemainingSeconds(state.session) : null;
@@ -631,7 +632,7 @@ function PreSession({
         />
 
         {/* Header */}
-        <div className="relative flex items-center justify-between px-7 pt-7 pb-5">
+        <div className="relative flex items-center justify-between px-7 pt-10 pb-8">
           <span
             className="font-light"
             style={{ color: "rgba(255,255,255,0.78)", fontSize: 15, letterSpacing: "-0.01em" }}
@@ -656,7 +657,7 @@ function PreSession({
           </div>
         </div>
 
-        <div className="relative flex-1 px-7 flex flex-col gap-7 pb-7">
+        <div className="relative flex-1 px-7 flex flex-col pb-4">
           {/* Scene picker */}
           <Section label="choose your space">
             <ScenePicker
@@ -666,7 +667,7 @@ function PreSession({
           </Section>
 
           {/* Task input */}
-          <Section label="what needs your attention">
+          <Section label="what needs your attention" className="mt-10">
             <div
               className="w-full py-2.5"
               style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
@@ -688,7 +689,7 @@ function PreSession({
           </Section>
 
           {/* Duration */}
-          <Section label="how long">
+          <Section label="how long" className="mt-7">
             <div className="flex flex-wrap gap-2">
               {PRESET_DURATIONS.map((d) => (
                 <button
@@ -761,7 +762,7 @@ function PreSession({
           </Section>
 
           {/* Mode */}
-          <Section label="mode">
+          <Section label="mode" className="mt-6">
             <div className="flex flex-wrap gap-2">
               {MODES.map((m) => (
                 <button
@@ -776,7 +777,7 @@ function PreSession({
           </Section>
 
           {/* Fullscreen toggle */}
-          <Section label="options">
+          <Section label="options" className="mt-9">
             <div
               className="flex items-center gap-3 cursor-pointer"
               style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, fontWeight: 300 }}
@@ -807,10 +808,10 @@ function PreSession({
         </div>
 
         {/* Start button — pinned to bottom */}
-        <div className="relative px-7 pb-8 pt-2">
+        <div className="relative px-7 pb-10 pt-7">
           <button
             onClick={onStart}
-            className="w-full py-3 rounded-xl font-light transition-all duration-500"
+            className="w-full py-3.5 rounded-xl font-light transition-all duration-500"
             style={{
               background: "rgba(255,255,255,0.07)",
               border: "1px solid rgba(255,255,255,0.11)",
@@ -857,9 +858,9 @@ function PreSession({
   );
 }
 
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
+function Section({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
-    <div>
+    <div className={className}>
       <p
         className="mb-3 font-light tracking-widest uppercase"
         style={{ color: "rgba(255,255,255,0.28)", fontSize: 10, letterSpacing: "0.12em" }}
