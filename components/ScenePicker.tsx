@@ -20,7 +20,7 @@ export default function ScenePicker({ selected, onSelect }: Props) {
             onClick={() => onSelect(scene.id)}
             className="relative rounded-lg overflow-hidden text-left no-select"
             style={{
-              height: 76,
+              height: 70,
               border: `1px solid ${
                 isActive ? `${scene.accent}55` : "rgba(255,255,255,0.06)"
               }`,

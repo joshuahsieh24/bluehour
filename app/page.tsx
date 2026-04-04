@@ -64,7 +64,7 @@ export default function LandingPage() {
            sections.                                                        */}
       <div
         className="absolute inset-x-0 flex flex-col items-center justify-center"
-        style={{ top: 0, height: "58vh", paddingBottom: "4vh" }}
+        style={{ top: 0, height: "78vh", paddingBottom: "10vh" }}
       >
         {/* Soft halo — purely atmospheric, not a readability crutch */}
         <div

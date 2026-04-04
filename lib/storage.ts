@@ -93,6 +93,18 @@ export function saveSession(record: SessionRecord): void {
   } catch {/* ignore */}
 }
 
+export function updateSessionNote(id: string, note: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const history = getHistory();
+    const idx = history.findIndex((s) => s.id === id);
+    if (idx !== -1) {
+      history[idx] = { ...history[idx], pulledAway: note };
+      localStorage.setItem(KEYS.history, JSON.stringify(history));
+    }
+  } catch {/* ignore */}
+}
+
 export function clearHistory(): void {
   if (typeof window === "undefined") return;
   try {
