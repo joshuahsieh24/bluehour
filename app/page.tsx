@@ -7,7 +7,7 @@ export default function LandingPage() {
   return (
     <div className="fixed inset-0 overflow-hidden no-select" style={{ background: "#080a18" }}>
 
-      {/* ── Background image — animesky4k.jpg (5803×3264, served from Vercel edge) */}
+      {/* ── Background ──────────────────────────────────────────────────────── */}
       <motion.div
         className="absolute inset-0"
         style={{
@@ -18,22 +18,23 @@ export default function LandingPage() {
         }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 1.8, ease: "easeInOut" }}
+        transition={{ duration: 2.0, ease: "easeInOut" }}
       />
 
-      {/* ── Overlay — one pass, restrained
-           Upper sky is already deep blue/purple — text sits cleanly without
-           heavy darkening. Lighter touch lets the 4K quality breathe.      */}
+      {/* ── Overlay — single restrained pass ────────────────────────────────
+           The upper sky is naturally dark blue/purple. Only the very top
+           and bottom need darkening; the middle should be near-transparent
+           so the image reads at full strength.                             */}
       <div
         className="absolute inset-0"
         style={{
           background: `linear-gradient(
             to bottom,
-            rgba(4, 5, 16, 0.48) 0%,
-            rgba(4, 5, 16, 0.18) 22%,
-            transparent           44%,
-            rgba(2, 3, 10, 0.22)  70%,
-            rgba(2, 3, 10, 0.52)  100%
+            rgba(4, 5, 16, 0.44) 0%,
+            rgba(4, 5, 16, 0.12) 20%,
+            transparent           40%,
+            rgba(2, 3, 10, 0.18)  68%,
+            rgba(2, 3, 10, 0.50)  100%
           )`,
         }}
       />
@@ -41,77 +42,97 @@ export default function LandingPage() {
       {/* ── Edge vignette */}
       <div className="absolute inset-0 vignette" />
 
-      {/* ── Film grain — very subtle */}
-      <div className="grain-overlay" style={{ opacity: 0.022 }} />
+      {/* ── Film grain */}
+      <div className="grain-overlay" style={{ opacity: 0.02 }} />
 
-      {/* ── Content ─────────────────────────────────────────────────────────── */}
-      {/* Layout: wordmark + tagline anchored in upper sky (~16vh from top),
-          CTA group pushed down with generous breathing room (~10vh gap).
-          This gives the image more presence and the cover better rhythm.  */}
-      <div className="absolute inset-0 flex flex-col items-center justify-start" style={{ paddingTop: "16vh" }}>
+      {/* ── Content ─────────────────────────────────────────────────────────
+           The full UI stack lives within a dedicated sky zone: the top 58%
+           of the screen. Everything is vertically centered inside that zone
+           with a slight upward bias (paddingBottom) so it reads as "in the
+           sky" rather than page-centered.
 
-        {/* Halo behind wordmark — unobtrusive glow, not a hard darkening */}
+           Below the 58% zone: pure landscape, no UI. This gives the cover
+           a cinematic, editorial feel — the image does the work, the UI
+           frames it.
+
+           Two distinct blocks with a fixed 72px gap:
+             1. Identity   — wordmark + tagline
+             2. Action     — Begin + history
+
+           72px is large enough to create a genuine visual pause between
+           the name and the invitation, without feeling like two separate
+           sections.                                                        */}
+      <div
+        className="absolute inset-x-0 flex flex-col items-center justify-center"
+        style={{ top: 0, height: "58vh", paddingBottom: "4vh" }}
+      >
+        {/* Soft halo — purely atmospheric, not a readability crutch */}
         <div
           className="pointer-events-none absolute"
           style={{
-            top: "9vh",
+            top: "12%",
             left: "50%",
             transform: "translateX(-50%)",
-            width: 440,
-            height: 220,
-            background: "radial-gradient(ellipse, rgba(4, 6, 20, 0.42) 0%, transparent 72%)",
-            filter: "blur(32px)",
+            width: 420,
+            height: 280,
+            background: "radial-gradient(ellipse, rgba(4, 6, 20, 0.36) 0%, transparent 68%)",
+            filter: "blur(36px)",
           }}
         />
 
-        {/* Wordmark + tagline */}
+        {/* ── Identity block ── */}
         <motion.div
           className="relative flex flex-col items-center"
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 2.0, ease: "easeOut" }}
+          transition={{ duration: 2.2, ease: "easeOut" }}
         >
           <h1
             className="font-light"
             style={{
-              fontSize: "clamp(44px, 5.5vw, 62px)",
-              letterSpacing: "-0.03em",
+              fontSize: "clamp(46px, 5.8vw, 64px)",
+              letterSpacing: "-0.035em",
               lineHeight: 1,
-              color: "rgba(255, 255, 255, 0.93)",
+              color: "rgba(255, 255, 255, 0.94)",
               textShadow: [
-                "0 0 52px rgba(110, 148, 255, 0.28)",
-                "0 0 110px rgba(70, 90, 210, 0.10)",
-                "0 2px 20px rgba(0, 0, 28, 0.68)",
+                "0 0 56px rgba(100, 140, 255, 0.26)",
+                "0 2px 22px rgba(0, 0, 28, 0.65)",
               ].join(", "),
             }}
           >
             bluehour
           </h1>
 
+          {/* Tagline — committed, not disappearing.
+              Tighter tracking and higher opacity make it a genuine
+              supporting element rather than invisible noise.         */}
           <motion.p
-            className="font-light mt-4"
+            className="font-light"
             style={{
+              marginTop: 14,
               fontSize: 11,
-              letterSpacing: "0.22em",
-              color: "rgba(255, 255, 255, 0.24)",
+              letterSpacing: "0.14em",
+              color: "rgba(255, 255, 255, 0.38)",
               textTransform: "uppercase",
-              textShadow: "0 1px 10px rgba(0, 0, 22, 0.6)",
+              textShadow: "0 1px 12px rgba(0, 0, 22, 0.55)",
             }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 2.0, delay: 0.5, ease: "easeOut" }}
+            transition={{ duration: 2.2, delay: 0.55, ease: "easeOut" }}
           >
             a place to settle in
           </motion.p>
         </motion.div>
 
-        {/* CTA group — separated with intentional breathing room */}
+        {/* ── Fixed gap — the editorial pause ── */}
+        <div style={{ height: 72 }} />
+
+        {/* ── Action block ── */}
         <motion.div
           className="flex flex-col items-center"
-          style={{ marginTop: "9vh" }}
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.8, delay: 0.9, ease: "easeOut" }}
+          transition={{ duration: 2.0, delay: 0.95, ease: "easeOut" }}
         >
           <Link
             href="/focus"
@@ -120,31 +141,31 @@ export default function LandingPage() {
               padding: "11px 52px",
               fontSize: 13,
               fontWeight: 300,
-              letterSpacing: "0.15em",
-              color: "rgba(255, 255, 255, 0.82)",
-              background: "rgba(255, 255, 255, 0.07)",
-              border: "1px solid rgba(255, 255, 255, 0.11)",
+              letterSpacing: "0.14em",
+              color: "rgba(255, 255, 255, 0.80)",
+              background: "rgba(255, 255, 255, 0.065)",
+              border: "1px solid rgba(255, 255, 255, 0.10)",
               borderRadius: 999,
-              backdropFilter: "blur(18px)",
-              WebkitBackdropFilter: "blur(18px)",
-              boxShadow: "0 2px 28px rgba(60, 80, 200, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.07)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              boxShadow: "0 2px 24px rgba(50, 70, 190, 0.11), inset 0 1px 0 rgba(255, 255, 255, 0.07)",
               textDecoration: "none",
-              transition: "all 0.4s ease",
+              transition: "all 0.45s ease",
             }}
             onMouseEnter={(e) => {
               Object.assign((e.currentTarget as HTMLElement).style, {
-                background: "rgba(255, 255, 255, 0.11)",
-                borderColor: "rgba(255, 255, 255, 0.2)",
-                color: "rgba(255, 255, 255, 0.96)",
-                boxShadow: "0 2px 36px rgba(80, 110, 220, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+                background: "rgba(255, 255, 255, 0.10)",
+                borderColor: "rgba(255, 255, 255, 0.18)",
+                color: "rgba(255, 255, 255, 0.95)",
+                boxShadow: "0 2px 32px rgba(70, 100, 220, 0.17), inset 0 1px 0 rgba(255, 255, 255, 0.09)",
               });
             }}
             onMouseLeave={(e) => {
               Object.assign((e.currentTarget as HTMLElement).style, {
-                background: "rgba(255, 255, 255, 0.07)",
-                borderColor: "rgba(255, 255, 255, 0.11)",
-                color: "rgba(255, 255, 255, 0.82)",
-                boxShadow: "0 2px 28px rgba(60, 80, 200, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.07)",
+                background: "rgba(255, 255, 255, 0.065)",
+                borderColor: "rgba(255, 255, 255, 0.10)",
+                color: "rgba(255, 255, 255, 0.80)",
+                boxShadow: "0 2px 24px rgba(50, 70, 190, 0.11), inset 0 1px 0 rgba(255, 255, 255, 0.07)",
               });
             }}
           >
@@ -152,24 +173,23 @@ export default function LandingPage() {
           </Link>
 
           <motion.div
-            style={{ marginTop: 20 }}
+            style={{ marginTop: 18 }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 2.0, delay: 1.3 }}
+            transition={{ duration: 2.2, delay: 1.4 }}
           >
             <Link
               href="/history"
               className="font-light"
               style={{
                 fontSize: 11,
-                letterSpacing: "0.1em",
-                color: "rgba(255, 255, 255, 0.18)",
+                letterSpacing: "0.09em",
+                color: "rgba(255, 255, 255, 0.17)",
                 textDecoration: "none",
-                transition: "color 0.4s ease",
-                textShadow: "0 1px 8px rgba(0, 0, 20, 0.5)",
+                transition: "color 0.45s ease",
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.44)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.18)"; }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.42)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.17)"; }}
             >
               history
             </Link>
@@ -177,13 +197,13 @@ export default function LandingPage() {
         </motion.div>
       </div>
 
-      {/* Footer */}
+      {/* ── Footer ──────────────────────────────────────────────────────────── */}
       <motion.p
-        className="absolute bottom-7 left-0 right-0 text-center font-light"
-        style={{ fontSize: 10, letterSpacing: "0.14em", color: "rgba(255,255,255,0.1)" }}
+        className="absolute bottom-6 left-0 right-0 text-center font-light"
+        style={{ fontSize: 10, letterSpacing: "0.13em", color: "rgba(255,255,255,0.09)" }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 2.4, delay: 2.0 }}
+        transition={{ duration: 2.8, delay: 2.2 }}
       >
         best on a second monitor · fullscreen
       </motion.p>
