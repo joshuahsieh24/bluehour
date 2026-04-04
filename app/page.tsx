@@ -4,32 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// COVER IMAGE
-// To activate the real image:
-//   1. Save the cover illustration as  public/cover.jpg  in this repo
-//   2. git add public/cover.jpg && git commit && git push
-// The constant below already points to where it will live on the CDN.
-// While the file is absent, the CSS recreation below is shown instead.
-// ─────────────────────────────────────────────────────────────────────────────
-const COVER_IMAGE =
-  "https://raw.githubusercontent.com/joshuahsieh24/bluehour/main/public/cover.png";
+// Cover image is served directly from Next.js / Vercel's edge CDN via the
+// public/ folder — no GitHub raw CDN, no rate limits, proper cache headers.
+const COVER_IMAGE = "/cover.png";
 
 export default function LandingPage() {
   const starCanvasRef = useRef<HTMLCanvasElement>(null);
-  const [imageLoaded, setImageLoaded] = useState(false);
+  // Cover image is a committed local asset — always use it.
+  // Keep imageFailed as a fallback in case of unexpected load errors.
   const [imageFailed, setImageFailed] = useState(false);
-
-  // Probe whether the cover image actually exists before committing to it
-  useEffect(() => {
-    if (!COVER_IMAGE) { setImageFailed(true); return; }
-    const img = new Image();
-    img.onload = () => setImageLoaded(true);
-    img.onerror = () => setImageFailed(true);
-    img.src = COVER_IMAGE;
-  }, []);
-
-  const useImage = imageLoaded && !imageFailed;
+  const useImage = !imageFailed;
 
   // Star field — only drawn in CSS-fallback mode (image has its own stars)
   useEffect(() => {

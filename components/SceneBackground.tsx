@@ -83,13 +83,21 @@ export default function SceneBackground({ scene, paused = false, dimmed = false 
             onCanPlay={() => setVideoReady(true)}
             onError={() => setVideoError(true)}
             className="absolute inset-0 w-full h-full object-cover"
-            style={{ transform: "scale(1.06)" }}
           />
 
-          {/* Video-specific darkening overlay — keeps timer readable */}
+          {/* Single darkening pass — consolidates videoDim + cinematic gradient
+              into one layer so we don't stack multiple semi-transparent composites
+              over the video, which compresses fine detail. */}
           <div
             className="absolute inset-0"
-            style={{ background: `rgba(0,0,0,${dim})` }}
+            style={{
+              background: `linear-gradient(
+                to bottom,
+                rgba(0,0,0,${Math.min(dim + 0.05, 0.55)}) 0%,
+                rgba(0,0,0,${Math.max(dim - 0.08, 0.1)}) 40%,
+                rgba(0,0,0,${Math.min(dim + 0.1, 0.60)}) 100%
+              )`,
+            }}
           />
         </motion.div>
       )}
@@ -135,18 +143,21 @@ export default function SceneBackground({ scene, paused = false, dimmed = false 
         />
       )}
 
-      {/* ── 5. Cinematic tint — cohesion + slight bottom darkening ──────────── */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `linear-gradient(
-            to bottom,
-            rgba(0,0,0,0.18) 0%,
-            rgba(0,0,0,0.04) 45%,
-            rgba(0,0,0,0.28) 100%
-          )`,
-        }}
-      />
+      {/* ── 5. Cinematic tint — gradient-only scenes (no video) ────────────── */}
+      {/* For video scenes this is folded into the video dim layer above       */}
+      {!scene.videoSrc && (
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `linear-gradient(
+              to bottom,
+              rgba(0,0,0,0.14) 0%,
+              rgba(0,0,0,0.02) 45%,
+              rgba(0,0,0,0.22) 100%
+            )`,
+          }}
+        />
+      )}
 
       {/* ── 6. Animation overlays ───────────────────────────────────────────── */}
       {(scene.animationPreset === "rain" || scene.animationPreset === "rain-city") && !paused && (
