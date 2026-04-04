@@ -1,4 +1,3 @@
-# Large media assets are served from GitHub CDN (raw.githubusercontent.com)
-# Excluding them keeps the Vercel deployment under the upload size limit.
+# Audio files are large (~68MB total) — served from GitHub CDN, not deployed.
+# Videos (16MB total) are deployed to Vercel edge for local-quality playback.
 public/audio/
-public/scenes/
