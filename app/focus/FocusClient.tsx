@@ -26,7 +26,7 @@ import {
   saveSession,
   updateSessionNote,
 } from "@/lib/storage";
-import { playCompletionChime } from "@/lib/completionChime";
+import { playCompletionChime, playCountdownCue } from "@/lib/completionChime";
 import { getScene } from "@/lib/scenes";
 
 import SceneBackground from "@/components/SceneBackground";
@@ -228,7 +228,7 @@ export default function FocusClient() {
   const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const idleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const completionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownCueFiredRef = useRef(false);
   const [overlayVisible, setOverlayVisible] = useState(true);
   const [openFullscreenOnStart, setOpenFullscreenOnStart] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -261,15 +261,24 @@ export default function FocusClient() {
       return;
     }
 
+    // Reset the countdown cue flag for each new active window (new session or resume)
+    countdownCueFiredRef.current = false;
+
     tickRef.current = setInterval(() => {
       const elapsed = getElapsedSeconds(state.session!);
       dispatch({ type: "TICK", elapsed });
 
-      // Check completion for timed sessions
       if (state.session!.plannedDuration !== "untimed") {
         const remaining = getRemainingSeconds(state.session!);
-        if (remaining !== null && remaining <= 0) {
-          dispatch({ type: "COMPLETE" });
+        if (remaining !== null) {
+          // Soft single-tone cue at 3 seconds remaining — fires once per session window
+          if (remaining === 3 && !countdownCueFiredRef.current) {
+            countdownCueFiredRef.current = true;
+            playCountdownCue();
+          }
+          if (remaining <= 0) {
+            dispatch({ type: "COMPLETE" });
+          }
         }
       }
     }, 1000);
@@ -369,14 +378,17 @@ export default function FocusClient() {
 
   const scene = getScene(state.sceneId);
 
-  // Open sidebar automatically when the user pauses — natural return to control
+  // Pause = controls return; resume = controls recede
   useEffect(() => {
     if (state.phase === "paused") {
       setSidebarOpen(true);
+    } else if (state.phase === "active") {
+      setSidebarOpen(false);
     }
   }, [state.phase]);
 
-  // Auto-complete: save session, show graceful summary, reopen sidebar
+  // On completion: save session, store summary, play chime.
+  // No auto-transition — the completion state rests on screen until the user acts.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (state.phase !== "complete" || !state.session) return;
@@ -384,10 +396,8 @@ export default function FocusClient() {
     const session = state.session;
     const elapsed = getElapsedSeconds(session);
 
-    // Fire the completion chime hook (currently a placeholder)
     playCompletionChime();
 
-    // Save the session immediately — note can be added from the sidebar summary
     saveSession({
       id: session.id,
       startedAt: session.startedAt,
@@ -401,7 +411,6 @@ export default function FocusClient() {
       interruptions: session.interruptions,
     });
 
-    // Store summary so the sidebar can display it after transition
     setCompletionSummary({
       id: session.id,
       elapsed,
@@ -410,24 +419,21 @@ export default function FocusClient() {
       sceneId: session.sceneId,
       interruptions: session.interruptions,
     });
-
-    // After a graceful pause: return to setup with sidebar open
-    completionTimerRef.current = setTimeout(() => {
-      dispatch({ type: "GO_AGAIN" });
-      setSidebarOpen(true);
-    }, 1200);
-
-    return () => {
-      if (completionTimerRef.current) clearTimeout(completionTimerRef.current);
-    };
   }, [state.phase]);
+
+  // Called from CompletionCard — transitions out of the resting completion state
+  const handleBeginAgain = () => {
+    dispatch({ type: "GO_AGAIN" });
+    setSidebarOpen(true);
+    // completionSummary is intentionally kept so the sidebar banner shows it briefly
+  };
 
   const handleStart = () => {
     if (openFullscreenOnStart && !isFullscreen) {
       toggleFullscreen();
     }
     setSidebarOpen(false);
-    setCompletionSummary(null); // clear summary when starting a new session
+    setCompletionSummary(null);
     dispatch({ type: "START" });
   };
 
@@ -493,10 +499,6 @@ export default function FocusClient() {
             sidebarOpen={sidebarOpen}
             setSidebarOpen={setSidebarOpen}
             completionSummary={completionSummary}
-            onSessionNote={(id, note) => {
-              updateSessionNote(id, note);
-              setCompletionSummary(null);
-            }}
           />
         )}
       </AnimatePresence>
@@ -528,12 +530,14 @@ export default function FocusClient() {
         )}
       </AnimatePresence>
 
-      {/* COMPLETE — graceful summary display, auto-transitions */}
+      {/* COMPLETE — resting state, stays until user acts */}
       <AnimatePresence>
         {state.phase === "complete" && state.session && (
           <CompletionCard
             session={state.session}
             elapsed={state.elapsed}
+            onNoteSubmit={(note) => updateSessionNote(state.session!.id, note)}
+            onBeginAgain={handleBeginAgain}
           />
         )}
       </AnimatePresence>
@@ -582,7 +586,6 @@ function PreSession({
   sidebarOpen,
   setSidebarOpen,
   completionSummary,
-  onSessionNote,
 }: {
   state: State;
   dispatch: React.Dispatch<Action>;
@@ -593,22 +596,9 @@ function PreSession({
   sidebarOpen: boolean;
   setSidebarOpen: (v: boolean | ((prev: boolean) => boolean)) => void;
   completionSummary: CompletionSummary | null;
-  onSessionNote: (id: string, note: string) => void;
 }) {
   const PRESET_DURATIONS = [25, 50, "untimed"] as const;
   const MODES: SessionMode[] = ["deep work", "writing", "reading", "coding", "reflection"];
-
-  // Completion note state
-  const [showNote, setShowNote] = useState(false);
-  const [noteText, setNoteText] = useState("");
-
-  const handleNoteSubmit = () => {
-    if (completionSummary && noteText.trim()) {
-      onSessionNote(completionSummary.id, noteText.trim());
-    }
-    setShowNote(false);
-    setNoteText("");
-  };
 
   // Custom duration state
   const [showCustom, setShowCustom] = useState(false);
@@ -769,60 +759,7 @@ function PreSession({
                     &ldquo;{completionSummary.task}&rdquo;
                   </p>
                 )}
-                {/* Note input */}
-                {!showNote ? (
-                  <button
-                    onClick={() => setShowNote(true)}
-                    className="font-light mt-3 transition-all duration-300"
-                    style={{
-                      display: "block",
-                      fontSize: 11,
-                      letterSpacing: "0.08em",
-                      color: "rgba(255,255,255,0.22)",
-                      cursor: "pointer",
-                    }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.44)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.22)"; }}
-                  >
-                    + add a note
-                  </button>
-                ) : (
-                  <div className="mt-3">
-                    <textarea
-                      autoFocus
-                      value={noteText}
-                      onChange={(e) => setNoteText(e.target.value)}
-                      placeholder="a few words…"
-                      maxLength={300}
-                      rows={2}
-                      className="w-full font-light resize-none"
-                      style={{
-                        background: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        borderRadius: 8,
-                        padding: "8px 10px",
-                        fontSize: 12,
-                        color: "rgba(255,255,255,0.6)",
-                        outline: "none",
-                        lineHeight: 1.5,
-                      }}
-                      onKeyDown={(e) => {
-                        if ((e.metaKey || e.ctrlKey) && e.key === "Enter") handleNoteSubmit();
-                        if (e.key === "Escape") { setShowNote(false); setNoteText(""); }
-                      }}
-                    />
-                    <div className="flex items-center justify-between mt-1.5">
-                      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.18)", letterSpacing: "0.06em", fontWeight: 300 }}>⌘↵ to save</span>
-                      <button
-                        onClick={handleNoteSubmit}
-                        className="font-light"
-                        style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em", cursor: "pointer" }}
-                      >
-                        save
-                      </button>
-                    </div>
-                  </div>
-                )}
+                {/* Note was handled in the completion screen — banner is read-only context */}
               </motion.div>
             )}
           </AnimatePresence>
