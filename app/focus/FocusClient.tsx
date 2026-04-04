@@ -215,6 +215,7 @@ export default function FocusClient() {
   const idleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [overlayVisible, setOverlayVisible] = useState(true);
   const [openFullscreenOnStart, setOpenFullscreenOnStart] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const taskInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
 
   // Init from localStorage
@@ -335,14 +336,19 @@ export default function FocusClient() {
         case "M":
           dispatch({ type: "TOGGLE_MUTE" });
           break;
+        case "s":
+        case "S":
+          setSidebarOpen((v) => !v);
+          break;
         case "Escape":
           if (isFullscreen) toggleFullscreen();
+          else if (sidebarOpen && state.phase === "active") setSidebarOpen(false);
           break;
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [state.phase, toggleFullscreen, isFullscreen]);
+  }, [state.phase, toggleFullscreen, isFullscreen, sidebarOpen]);
 
   const scene = getScene(state.sceneId);
 
@@ -430,6 +436,8 @@ export default function FocusClient() {
             openFullscreenOnStart={openFullscreenOnStart}
             setOpenFullscreenOnStart={setOpenFullscreenOnStart}
             taskInputRef={taskInputRef}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
           />
         )}
       </AnimatePresence>
@@ -445,6 +453,8 @@ export default function FocusClient() {
             timeDisplay={timeDisplay}
             onToggleFullscreen={toggleFullscreen}
             isFullscreen={isFullscreen}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
           />
         )}
       </AnimatePresence>
@@ -512,6 +522,8 @@ function PreSession({
   openFullscreenOnStart,
   setOpenFullscreenOnStart,
   taskInputRef,
+  sidebarOpen,
+  setSidebarOpen,
 }: {
   state: State;
   dispatch: React.Dispatch<Action>;
@@ -519,6 +531,8 @@ function PreSession({
   openFullscreenOnStart: boolean;
   setOpenFullscreenOnStart: (v: boolean) => void;
   taskInputRef: React.RefObject<HTMLInputElement>;
+  sidebarOpen: boolean;
+  setSidebarOpen: (v: boolean | ((prev: boolean) => boolean)) => void;
 }) {
   const PRESET_DURATIONS = [25, 50, "untimed"] as const;
   const MODES: SessionMode[] = ["deep work", "writing", "reading", "coding", "reflection"];
@@ -552,12 +566,42 @@ function PreSession({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.8 }}
     >
-      {/* Floating side panel — lighter, more translucent */}
+      {/* Sidebar toggle tab — sits outside the panel, stays visible when collapsed */}
+      <motion.button
+        onClick={() => setSidebarOpen((v) => !v)}
+        title={sidebarOpen ? "Collapse sidebar (S)" : "Open sidebar (S)"}
+        className="fixed top-1/2 -translate-y-1/2 no-select"
+        animate={{ left: sidebarOpen ? 332 : 0 }}
+        transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+        style={{
+          width: 16,
+          height: 52,
+          background: "rgba(6, 7, 11, 0.54)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderRadius: "0 7px 7px 0",
+          border: "1px solid rgba(255,255,255,0.06)",
+          borderLeft: "none",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "rgba(255,255,255,0.32)",
+          fontSize: 11,
+          cursor: "pointer",
+          zIndex: 30,
+        }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.6)"; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.32)"; }}
+      >
+        {sidebarOpen ? "‹" : "›"}
+      </motion.button>
+
+      {/* Floating side panel */}
       <motion.div
         className="relative flex flex-col h-full overflow-y-auto scrollable"
         style={{
           width: 348,
-          // Lighter, more translucent — scene breathes through significantly
+          flexShrink: 0,
           background: "rgba(6, 7, 11, 0.48)",
           backdropFilter: "blur(28px) saturate(1.15)",
           WebkitBackdropFilter: "blur(28px) saturate(1.15)",
@@ -566,9 +610,12 @@ function PreSession({
           zIndex: 25,
         }}
         initial={{ x: -16, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
+        animate={{ x: sidebarOpen ? 0 : -348, opacity: 1 }}
         exit={{ x: -16, opacity: 0 }}
-        transition={{ duration: 0.55, ease: "easeOut" }}
+        transition={{
+          x: { duration: 0.38, ease: [0.22, 1, 0.36, 1] },
+          opacity: { duration: 0.55 },
+        }}
       >
         {/* Subtle top-to-mid gradient to soften the panel feel */}
         <div
@@ -830,6 +877,8 @@ function ActiveSession({
   timeDisplay,
   onToggleFullscreen,
   isFullscreen,
+  sidebarOpen,
+  setSidebarOpen,
 }: {
   state: State;
   dispatch: React.Dispatch<Action>;
@@ -838,6 +887,8 @@ function ActiveSession({
   timeDisplay: string;
   onToggleFullscreen: () => void;
   isFullscreen: boolean;
+  sidebarOpen: boolean;
+  setSidebarOpen: (v: boolean | ((prev: boolean) => boolean)) => void;
 }) {
   const scene = getScene(state.sceneId);
   const isPaused = state.phase === "paused";
@@ -850,6 +901,8 @@ function ActiveSession({
       ? overlayVisible
       : overlayVisible; // ambient: only on hover/move
 
+  const PANEL_W = 280;
+
   return (
     <motion.div
       className="fixed inset-0 flex flex-col items-center justify-center"
@@ -859,6 +912,117 @@ function ActiveSession({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.8 }}
     >
+      {/* ── Scene sidebar — slide in from left during active session ────────── */}
+      {/* Toggle tab — always visible, slides with the panel */}
+      <motion.button
+        onClick={() => setSidebarOpen((v) => !v)}
+        title={sidebarOpen ? "Hide scenes (S)" : "Change scene (S)"}
+        className="fixed top-1/2 -translate-y-1/2 no-select"
+        animate={{ left: sidebarOpen ? PANEL_W - 1 : 0 }}
+        transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+        style={{
+          width: 16,
+          height: 52,
+          background: "rgba(6, 7, 11, 0.54)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderRadius: "0 7px 7px 0",
+          border: "1px solid rgba(255,255,255,0.06)",
+          borderLeft: "none",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "rgba(255,255,255,0.28)",
+          fontSize: 11,
+          cursor: "pointer",
+          zIndex: 32,
+          pointerEvents: overlayVisible || sidebarOpen ? "auto" : "none",
+          opacity: overlayVisible || sidebarOpen ? 1 : 0,
+          transition: "opacity 0.5s ease, color 0.2s ease",
+        }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.6)"; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.28)"; }}
+      >
+        {sidebarOpen ? "‹" : "›"}
+      </motion.button>
+
+      {/* Slide-in panel */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.div
+            className="fixed top-0 bottom-0 left-0 flex flex-col overflow-hidden"
+            style={{
+              width: PANEL_W,
+              background: "rgba(5, 6, 9, 0.58)",
+              backdropFilter: "blur(28px) saturate(1.1)",
+              WebkitBackdropFilter: "blur(28px) saturate(1.1)",
+              borderRight: "1px solid rgba(255,255,255,0.04)",
+              boxShadow: "4px 0 40px rgba(0,0,0,0.28)",
+              zIndex: 31,
+            }}
+            initial={{ x: -PANEL_W }}
+            animate={{ x: 0 }}
+            exit={{ x: -PANEL_W }}
+            transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {/* Header */}
+            <div
+              className="flex items-center justify-between px-5 pt-6 pb-4 flex-shrink-0"
+              style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+            >
+              <span
+                className="font-light uppercase tracking-widest"
+                style={{ fontSize: 9, letterSpacing: "0.14em", color: "rgba(255,255,255,0.28)" }}
+              >
+                scene
+              </span>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="font-light transition-all duration-300"
+                style={{ fontSize: 10, letterSpacing: "0.06em", color: "rgba(255,255,255,0.25)", cursor: "pointer" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.55)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.25)"; }}
+              >
+                close
+              </button>
+            </div>
+
+            {/* Scene picker */}
+            <div className="flex-1 overflow-y-auto scrollable px-3 py-4">
+              <ScenePicker
+                selected={state.sceneId}
+                onSelect={(id) => {
+                  dispatch({ type: "SET_SCENE", id });
+                  setSidebarOpen(false);
+                }}
+              />
+            </div>
+
+            {/* Current session info */}
+            <div
+              className="flex-shrink-0 px-5 py-4"
+              style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
+            >
+              {state.session?.task ? (
+                <p
+                  className="font-light leading-relaxed"
+                  style={{ fontSize: 12, color: "rgba(255,255,255,0.32)", fontStyle: "italic" }}
+                >
+                  &ldquo;{state.session.task}&rdquo;
+                </p>
+              ) : (
+                <p
+                  className="font-light"
+                  style={{ fontSize: 11, color: "rgba(255,255,255,0.18)", letterSpacing: "0.06em" }}
+                >
+                  {state.session?.mode ?? "focus"}
+                </p>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Center overlay */}
       <motion.div
         className="flex flex-col items-center"
