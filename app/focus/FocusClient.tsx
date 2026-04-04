@@ -533,29 +533,41 @@ function PreSession({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.7 }}
+      transition={{ duration: 0.8 }}
     >
-      {/* Dark side panel */}
+      {/* Floating side panel — lighter, more translucent */}
       <motion.div
         className="relative flex flex-col h-full overflow-y-auto scrollable"
         style={{
-          width: 380,
-          background: "rgba(10, 11, 15, 0.82)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          borderRight: "1px solid rgba(255,255,255,0.06)",
+          width: 360,
+          // More translucent than before — lets the scene breathe through
+          background: "rgba(8, 9, 13, 0.62)",
+          backdropFilter: "blur(32px) saturate(1.1)",
+          WebkitBackdropFilter: "blur(32px) saturate(1.1)",
+          // Soft right edge — a fade instead of a hard border
+          borderRight: "1px solid rgba(255,255,255,0.045)",
+          boxShadow: "4px 0 40px rgba(0,0,0,0.3)",
           zIndex: 25,
         }}
-        initial={{ x: -20, opacity: 0 }}
+        initial={{ x: -16, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
-        exit={{ x: -20, opacity: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
+        exit={{ x: -16, opacity: 0 }}
+        transition={{ duration: 0.55, ease: "easeOut" }}
       >
+        {/* Subtle top-to-mid gradient to soften the panel feel */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(to bottom, rgba(255,255,255,0.015) 0%, transparent 30%)",
+          }}
+        />
+
         {/* Header */}
-        <div className="flex items-center justify-between px-8 pt-8 pb-6">
+        <div className="relative flex items-center justify-between px-7 pt-7 pb-5">
           <span
             className="font-light"
-            style={{ color: "rgba(255,255,255,0.88)", fontSize: 16, letterSpacing: "-0.01em" }}
+            style={{ color: "rgba(255,255,255,0.78)", fontSize: 15, letterSpacing: "-0.01em" }}
           >
             bluehour
           </span>
@@ -563,21 +575,21 @@ function PreSession({
             <Link
               href="/"
               className="font-light transition-all duration-400"
-              style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, textDecoration: "none", letterSpacing: "0.04em" }}
+              style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, textDecoration: "none", letterSpacing: "0.05em" }}
             >
               home
             </Link>
             <Link
               href="/history"
               className="font-light transition-all duration-400"
-              style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, textDecoration: "none", letterSpacing: "0.04em" }}
+              style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, textDecoration: "none", letterSpacing: "0.05em" }}
             >
               history
             </Link>
           </div>
         </div>
 
-        <div className="flex-1 px-8 flex flex-col gap-8 pb-8">
+        <div className="relative flex-1 px-7 flex flex-col gap-7 pb-7">
           {/* Scene picker */}
           <Section label="choose your space">
             <ScenePicker
@@ -589,8 +601,8 @@ function PreSession({
           {/* Task input */}
           <Section label="what needs your attention">
             <div
-              className="w-full py-3"
-              style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}
+              className="w-full py-2.5"
+              style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
             >
               <input
                 ref={taskInputRef}
@@ -598,9 +610,9 @@ function PreSession({
                 value={state.task}
                 onChange={(e) => dispatch({ type: "SET_TASK", t: e.target.value })}
                 placeholder="one thing only"
-                className="w-full text-sm font-light"
+                className="w-full font-light"
                 style={{
-                  color: "rgba(255,255,255,0.78)",
+                  color: "rgba(255,255,255,0.75)",
                   fontSize: 14,
                 }}
                 maxLength={120}
@@ -640,56 +652,58 @@ function PreSession({
 
           {/* Fullscreen toggle */}
           <Section label="options">
-            <label
+            <div
               className="flex items-center gap-3 cursor-pointer"
-              style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, fontWeight: 300 }}
+              style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, fontWeight: 300 }}
+              onClick={() => setOpenFullscreenOnStart(!openFullscreenOnStart)}
             >
               <div
-                onClick={() => setOpenFullscreenOnStart(!openFullscreenOnStart)}
-                className="relative transition-all duration-400"
+                className="relative flex-shrink-0 transition-all duration-400"
                 style={{
-                  width: 32,
-                  height: 18,
+                  width: 30,
+                  height: 17,
                   borderRadius: 999,
                   background: openFullscreenOnStart
-                    ? "rgba(255,255,255,0.25)"
-                    : "rgba(255,255,255,0.08)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  cursor: "pointer",
-                  flexShrink: 0,
+                    ? "rgba(255,255,255,0.22)"
+                    : "rgba(255,255,255,0.07)",
+                  border: "1px solid rgba(255,255,255,0.1)",
                 }}
               >
                 <motion.div
                   className="absolute top-0.5 rounded-full bg-white"
-                  style={{ width: 14, height: 14 }}
-                  animate={{ left: openFullscreenOnStart ? 15 : 2 }}
-                  transition={{ duration: 0.25 }}
+                  style={{ width: 13, height: 13 }}
+                  animate={{ left: openFullscreenOnStart ? 14 : 2 }}
+                  transition={{ duration: 0.22 }}
                 />
               </div>
               open in fullscreen on start
-            </label>
+            </div>
           </Section>
         </div>
 
-        {/* Start button */}
-        <div className="px-8 pb-10 pt-2">
+        {/* Start button — pinned to bottom */}
+        <div className="relative px-7 pb-8 pt-2">
           <button
             onClick={onStart}
-            className="w-full py-3.5 rounded-xl font-light transition-all duration-500"
+            className="w-full py-3 rounded-xl font-light transition-all duration-500"
             style={{
-              background: "rgba(255,255,255,0.09)",
-              border: "1px solid rgba(255,255,255,0.14)",
-              color: "rgba(255,255,255,0.88)",
-              fontSize: 14,
-              letterSpacing: "0.06em",
+              background: "rgba(255,255,255,0.07)",
+              border: "1px solid rgba(255,255,255,0.11)",
+              color: "rgba(255,255,255,0.82)",
+              fontSize: 13,
+              letterSpacing: "0.07em",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.14)";
-              (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.22)";
+              const el = e.currentTarget as HTMLElement;
+              el.style.background = "rgba(255,255,255,0.12)";
+              el.style.borderColor = "rgba(255,255,255,0.2)";
+              el.style.color = "rgba(255,255,255,0.92)";
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.09)";
-              (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.14)";
+              const el = e.currentTarget as HTMLElement;
+              el.style.background = "rgba(255,255,255,0.07)";
+              el.style.borderColor = "rgba(255,255,255,0.11)";
+              el.style.color = "rgba(255,255,255,0.82)";
             }}
           >
             begin
@@ -697,14 +711,22 @@ function PreSession({
         </div>
       </motion.div>
 
-      {/* Right side: scene preview fills the rest */}
-      <div className="flex-1 relative flex items-end justify-end p-8">
-        <p
-          className="font-light"
-          style={{ color: "rgba(255,255,255,0.18)", fontSize: 11, letterSpacing: "0.1em" }}
+      {/* Right side: scene preview — scene description lower right */}
+      <div className="flex-1 relative flex flex-col items-end justify-end p-8">
+        <motion.div
+          key={state.sceneId}
+          className="text-right"
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
         >
-          {getScene(state.sceneId).description}
-        </p>
+          <p
+            className="font-light"
+            style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, letterSpacing: "0.08em" }}
+          >
+            {getScene(state.sceneId).tagline}
+          </p>
+        </motion.div>
       </div>
     </motion.div>
   );

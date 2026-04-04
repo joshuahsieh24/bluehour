@@ -11,72 +11,112 @@ interface Props {
 
 export default function ScenePicker({ selected, onSelect }: Props) {
   return (
-    <div className="grid grid-cols-3 gap-2">
+    <div className="grid grid-cols-3 gap-1.5">
       {SCENES.map((scene) => {
         const isActive = scene.id === selected;
         return (
           <motion.button
             key={scene.id}
             onClick={() => onSelect(scene.id)}
-            className="relative rounded-lg overflow-hidden text-left transition-all duration-500 group no-select"
+            className="relative rounded-lg overflow-hidden text-left no-select"
             style={{
-              height: 72,
-              border: `1px solid ${isActive ? `${scene.accent}60` : "rgba(255,255,255,0.07)"}`,
-              boxShadow: isActive ? `0 0 0 1px ${scene.accent}30, 0 4px 20px rgba(0,0,0,0.5)` : "none",
+              height: 76,
+              border: `1px solid ${
+                isActive ? `${scene.accent}55` : "rgba(255,255,255,0.06)"
+              }`,
+              boxShadow: isActive
+                ? `0 0 0 1px ${scene.accent}20, inset 0 0 12px ${scene.accent}10`
+                : "none",
+              transition: "border-color 400ms ease, box-shadow 400ms ease",
             }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ duration: 0.2 }}
+            whileHover={{ scale: 1.025 }}
+            whileTap={{ scale: 0.975 }}
+            transition={{ duration: 0.18 }}
           >
-            {/* Scene gradient preview */}
+            {/* Gradient base */}
             <div
               className="absolute inset-0"
               style={{ background: scene.gradient }}
             />
 
-            {/* Accent glow on selected */}
+            {/* Active accent glow */}
             {isActive && (
               <motion.div
                 className="absolute inset-0"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
+                transition={{ duration: 0.4 }}
                 style={{
-                  background: `radial-gradient(ellipse at 50% 50%, ${scene.accent}20 0%, transparent 70%)`,
+                  background: `radial-gradient(ellipse at 50% 80%, ${scene.accent}22 0%, transparent 75%)`,
                 }}
               />
             )}
 
-            {/* Overlay */}
+            {/* Dark overlay — less dark when active */}
             <div
-              className="absolute inset-0 transition-opacity duration-300"
+              className="absolute inset-0"
               style={{
-                background: "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.5) 100%)",
-                opacity: isActive ? 0.7 : 0.85,
+                background: "linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.58) 100%)",
+                opacity: isActive ? 0.75 : 0.9,
+                transition: "opacity 350ms ease",
               }}
             />
 
-            {/* Text */}
-            <div className="absolute bottom-0 left-0 right-0 p-2">
+            {/* Text — name + tagline */}
+            <div className="absolute bottom-0 left-0 right-0 px-2 py-1.5">
               <p
-                className="text-xs font-light leading-none"
                 style={{
-                  color: isActive ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.55)",
+                  color: isActive ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.5)",
+                  fontSize: 10,
+                  fontWeight: 300,
                   letterSpacing: "0.01em",
-                  fontSize: 11,
+                  lineHeight: 1,
+                  marginBottom: 2,
+                  transition: "color 350ms ease",
                 }}
               >
                 {scene.name}
               </p>
+              <p
+                style={{
+                  color: isActive ? "rgba(255,255,255,0.38)" : "rgba(255,255,255,0.22)",
+                  fontSize: 9,
+                  fontWeight: 300,
+                  letterSpacing: "0.01em",
+                  lineHeight: 1,
+                  transition: "color 350ms ease",
+                  overflow: "hidden",
+                  whiteSpace: "nowrap",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {scene.tagline}
+              </p>
             </div>
 
-            {/* Selected indicator */}
+            {/* Has-video indicator */}
+            {scene.videoSrc && (
+              <div
+                className="absolute top-1.5 left-1.5"
+                title="live scene"
+                style={{
+                  width: 4,
+                  height: 4,
+                  borderRadius: "50%",
+                  background: isActive ? scene.accent : "rgba(255,255,255,0.2)",
+                  transition: "background 400ms ease",
+                }}
+              />
+            )}
+
+            {/* Selected dot */}
             {isActive && (
               <motion.div
-                className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full"
-                style={{ background: scene.accent }}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 0.25 }}
+                className="absolute top-1.5 right-1.5 rounded-full"
+                style={{ width: 5, height: 5, background: scene.accent }}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.22 }}
               />
             )}
           </motion.button>

@@ -15,17 +15,38 @@ interface Props {
 }
 
 export default function SceneBackground({ scene, paused = false, dimmed = false }: Props) {
+  // Video state
+  const [videoReady, setVideoReady] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Image state (fallback when no video)
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const imgRef = useRef<HTMLImageElement>(null);
 
-  // Reset on scene change
+  // Reset all media state on scene change
   useEffect(() => {
+    setVideoReady(false);
+    setVideoError(false);
     setImgLoaded(false);
     setImgError(false);
   }, [scene.id]);
 
-  const showImage = imgLoaded && !imgError && !!scene.imageSrc;
+  // Pause/resume video with session state
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !videoReady) return;
+    if (paused) {
+      v.pause();
+    } else {
+      // Suppress the DOMException if play() gets interrupted — expected behaviour
+      v.play().catch(() => {});
+    }
+  }, [paused, videoReady]);
+
+  const showVideo = videoReady && !videoError && !!scene.videoSrc;
+  const showImage = !showVideo && imgLoaded && !imgError && !!scene.imageSrc;
+  const dim = scene.videoDim ?? 0.38;
 
   return (
     <div
@@ -33,18 +54,80 @@ export default function SceneBackground({ scene, paused = false, dimmed = false 
       style={{ zIndex: 0 }}
       aria-hidden="true"
     >
-      {/* Gradient base — always present */}
+      {/* ── 1. Gradient base — always visible ──────────────────────────────── */}
       <div
-        className="absolute inset-0 transition-all duration-700"
+        className="absolute inset-0"
         style={{ background: scene.gradient }}
       />
 
-      {/* Real image — fades in over gradient when loaded */}
-      {scene.imageSrc && (
+      {/* ── 2. Video background ─────────────────────────────────────────────── */}
+      {scene.videoSrc && (
         <>
-          {/* Hidden preloader — intentionally uses img for onLoad/onError */}
+          {/* The actual <video> element — hidden until ready */}
+          <video
+            ref={videoRef}
+            key={`video-${scene.id}`}
+            src={scene.videoSrc}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            onCanPlay={() => setVideoReady(true)}
+            onError={() => {
+              // Silent fail — fall back to gradient/image
+              setVideoError(true);
+            }}
+            style={{ display: "none" }}
+          />
+
+          <AnimatePresence>
+            {showVideo && (
+              <motion.div
+                key={`video-layer-${scene.id}`}
+                className="absolute inset-0"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 1.4, ease: "easeInOut" }}
+              >
+                {/* Video element rendered visually — scale to fill */}
+                <video
+                  src={scene.videoSrc}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  ref={(el) => {
+                    // Pause/resume this display video too
+                    if (!el) return;
+                    if (paused) el.pause();
+                    else el.play().catch(() => {});
+                  }}
+                  className={`absolute inset-0 w-full h-full object-cover ${
+                    paused ? "" : "animate-drift-slow"
+                  }`}
+                  style={{ transform: "scale(1.06)" }}
+                />
+
+                {/* Video-specific darkening overlay — keeps timer readable */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: `rgba(0,0,0,${dim})`,
+                  }}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
+      )}
+
+      {/* ── 3. Still image fallback (when no video) ─────────────────────────── */}
+      {!scene.videoSrc && scene.imageSrc && (
+        <>
+          {/* Hidden preloader — img used intentionally for onLoad/onError */}
           <img
-            ref={imgRef}
             src={scene.imageSrc}
             alt=""
             className="sr-only"
@@ -55,11 +138,11 @@ export default function SceneBackground({ scene, paused = false, dimmed = false 
             {showImage && (
               <motion.div
                 key={`img-${scene.id}`}
+                className="absolute inset-0"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 1.2, ease: "easeInOut" }}
-                className="absolute inset-0"
               >
                 <div
                   className={`absolute inset-[-6%] bg-cover bg-center ${
@@ -73,23 +156,28 @@ export default function SceneBackground({ scene, paused = false, dimmed = false 
         </>
       )}
 
-      {/* Gradient drift (when no image or image not loaded) */}
-      {!showImage && (
+      {/* ── 4. Gradient drift animation (when no media ready) ───────────────── */}
+      {!showVideo && !showImage && (
         <div
           className={`absolute inset-[-6%] ${paused ? "" : "animate-drift-slow"}`}
           style={{ background: scene.gradient }}
         />
       )}
 
-      {/* Tint layer for cohesion */}
+      {/* ── 5. Cinematic tint — cohesion + slight bottom darkening ──────────── */}
       <div
-        className="absolute inset-0 transition-all duration-700"
+        className="absolute inset-0"
         style={{
-          background: `linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.35) 100%)`,
+          background: `linear-gradient(
+            to bottom,
+            rgba(0,0,0,0.18) 0%,
+            rgba(0,0,0,0.04) 45%,
+            rgba(0,0,0,0.28) 100%
+          )`,
         }}
       />
 
-      {/* Animation overlays */}
+      {/* ── 6. Animation overlays ───────────────────────────────────────────── */}
       {(scene.animationPreset === "rain" || scene.animationPreset === "rain-city") && !paused && (
         <RainOverlay
           intensity={scene.animationPreset === "rain-city" ? "light" : "medium"}
@@ -97,37 +185,38 @@ export default function SceneBackground({ scene, paused = false, dimmed = false 
       )}
 
       {(scene.animationPreset === "haze" || scene.animationPreset === "still") &&
-        scene.hazeColor && !paused && (
+        scene.hazeColor &&
+        !paused && (
           <HazeOverlay color={scene.hazeColor} opacity={scene.hazeOpacity ?? 0.25} />
         )}
 
       {scene.animationPreset === "dust" && !paused && <DustOverlay />}
 
-      {/* Vignette */}
+      {/* ── 7. Vignette ─────────────────────────────────────────────────────── */}
       <div
         className={
           scene.vignetteStrength === "strong" ? "vignette vignette-strong" : "vignette"
         }
       />
 
-      {/* Film grain */}
+      {/* ── 8. Film grain ───────────────────────────────────────────────────── */}
       <div
         className="grain-overlay"
         style={{ opacity: scene.grainOpacity }}
       />
 
-      {/* Pause / dim overlay */}
+      {/* ── 9. Pause / dim overlay ──────────────────────────────────────────── */}
       <motion.div
         className="absolute inset-0 bg-black"
-        animate={{ opacity: dimmed ? 0.45 : paused ? 0.35 : 0 }}
-        transition={{ duration: 600 / 1000, ease: "easeInOut" }}
+        animate={{ opacity: dimmed ? 0.5 : paused ? 0.38 : 0 }}
+        transition={{ duration: 0.6, ease: "easeInOut" }}
       />
 
-      {/* Accent tint on sides */}
+      {/* ── 10. Accent ambient edge glow ────────────────────────────────────── */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: `radial-gradient(ellipse at 0% 50%, ${scene.accent}18 0%, transparent 60%)`,
+          background: `radial-gradient(ellipse at 0% 55%, ${scene.accent}14 0%, transparent 55%)`,
           mixBlendMode: "screen",
         }}
       />

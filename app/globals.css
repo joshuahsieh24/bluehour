@@ -144,28 +144,29 @@ input[type="text"]::placeholder {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 16px;
+  padding: 5px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  font-size: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  font-size: 12px;
   font-weight: 300;
   letter-spacing: 0.02em;
   cursor: pointer;
-  transition: all 400ms ease;
-  color: rgba(255, 255, 255, 0.58);
+  transition: all 350ms ease;
+  color: rgba(255, 255, 255, 0.48);
   background: transparent;
+  white-space: nowrap;
 }
 
 .pill:hover {
-  border-color: rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.88);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.78);
   background: rgba(255, 255, 255, 0.04);
 }
 
 .pill-active {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.22);
-  color: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.82);
 }
 
 /* Keyframes for grain in CSS (mirrors tailwind but needed here too) */

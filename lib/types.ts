@@ -34,9 +34,11 @@ export type FocusState =
 export interface Scene {
   id: SceneId;
   name: string;
-  description: string;
+  description: string;       // short evocative caption
+  tagline: string;           // audio/mood descriptor shown in picker
   gradient: string;          // CSS gradient fallback (always shown)
-  imageSrc?: string;         // optional real image path
+  imageSrc?: string;         // optional still image path
+  videoSrc?: string;         // optional video path (takes priority over image)
   accent: string;            // hex accent color
   audioSrc?: string;         // path to ambient audio
   animationPreset: AnimationPreset;
@@ -44,6 +46,7 @@ export interface Scene {
   vignetteStrength: "normal" | "strong";
   hazeColor?: string;        // for haze overlay
   hazeOpacity?: number;
+  videoDim?: number;         // extra dim applied to video (0–1, default 0.35)
 }
 
 export interface SessionRecord {
