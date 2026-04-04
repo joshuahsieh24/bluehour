@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
@@ -12,8 +12,8 @@ export default function LandingPage() {
   const starCanvasRef = useRef<HTMLCanvasElement>(null);
   // Cover image is a committed local asset — always use it.
   // Keep imageFailed as a fallback in case of unexpected load errors.
-  const [imageFailed, setImageFailed] = useState(false);
-  const useImage = !imageFailed;
+  // Always show the cover image (committed local asset); CSS fallback if it somehow fails
+  const useImage = true;
 
   // Star field — only drawn in CSS-fallback mode (image has its own stars)
   useEffect(() => {
