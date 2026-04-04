@@ -13,7 +13,7 @@ export const SCENES: Scene[] = [
     tagline: "rain and room tone",
     gradient:
       "radial-gradient(ellipse at 30% 60%, #1a2535 0%, #111620 40%, #090c12 100%)",
-    videoSrc: "/scenes/rainyjazzvid.mp4",
+    videoSrc: "/scenes/lofi-cafe.mp4",
     accent: "#4a7ba8",
     audioSrc: `${AUDIO}/rainyjazz.mp3`,
     animationPreset: "rain",
