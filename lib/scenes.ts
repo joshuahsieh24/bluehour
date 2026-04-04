@@ -1,9 +1,8 @@
 import type { Scene } from "./types";
 
-// Audio and video assets are served from GitHub's CDN so Vercel deployments
-// stay small. The repo must remain public for these URLs to resolve.
-const GITHUB_RAW =
-  "https://raw.githubusercontent.com/joshuahsieh24/bluehour/main/public";
+// All assets are served locally from public/ via Next.js / Vercel's edge CDN.
+// Videos: public/scenes/*.mp4  →  /scenes/*.mp4
+// Audio:  public/audio/*.mp3   →  /audio/*.mp3
 
 export const SCENES: Scene[] = [
   {
@@ -13,9 +12,9 @@ export const SCENES: Scene[] = [
     tagline: "rain and room tone",
     gradient:
       "radial-gradient(ellipse at 30% 60%, #1a2535 0%, #111620 40%, #090c12 100%)",
-    videoSrc: `${GITHUB_RAW}/scenes/rainyjazzvid.mp4`,
+    videoSrc: "/scenes/rainyjazzvid.mp4",
     accent: "#4a7ba8",
-    audioSrc: `${GITHUB_RAW}/audio/rainyjazz.mp3`,
+    audioSrc: "/audio/rainyjazz.mp3",
     animationPreset: "rain",
     grainOpacity: 0.03,
     vignetteStrength: "normal",
@@ -28,9 +27,9 @@ export const SCENES: Scene[] = [
     tagline: "late and low-lit",
     gradient:
       "radial-gradient(ellipse at 40% 70%, #0d1829 0%, #080e1a 50%, #050810 100%)",
-    videoSrc: `${GITHUB_RAW}/scenes/cozyjazz.mp4`,
+    videoSrc: "/scenes/cozyjazz.mp4",
     accent: "#8b7355",
-    audioSrc: `${GITHUB_RAW}/audio/nightjazz.mp3`,
+    audioSrc: "/audio/nightjazz.mp3",
     animationPreset: "haze",
     grainOpacity: 0.04,
     vignetteStrength: "strong",
@@ -45,9 +44,9 @@ export const SCENES: Scene[] = [
     tagline: "warm and still",
     gradient:
       "radial-gradient(ellipse at 60% 40%, #1f1208 0%, #130d05 45%, #0a0703 100%)",
-    videoSrc: `${GITHUB_RAW}/scenes/kittyblues.mp4`,
+    videoSrc: "/scenes/kittyblues.mp4",
     accent: "#c4813a",
-    audioSrc: `${GITHUB_RAW}/audio/pianoroom.mp3`,
+    audioSrc: "/audio/pianoroom.mp3",
     animationPreset: "still",
     grainOpacity: 0.03,
     vignetteStrength: "strong",
@@ -62,9 +61,9 @@ export const SCENES: Scene[] = [
     tagline: "still and attentive",
     gradient:
       "radial-gradient(ellipse at 50% 30%, #14111a 0%, #0d0b12 50%, #080609 100%)",
-    videoSrc: `${GITHUB_RAW}/scenes/libraryvibe.mp4`,
+    videoSrc: "/scenes/libraryvibe.mp4",
     accent: "#7a6f8a",
-    audioSrc: `${GITHUB_RAW}/audio/librarysound.mp3`,
+    audioSrc: "/audio/librarysound.mp3",
     animationPreset: "dust",
     grainOpacity: 0.04,
     vignetteStrength: "strong",
@@ -77,9 +76,9 @@ export const SCENES: Scene[] = [
     tagline: "distant lights and weather",
     gradient:
       "radial-gradient(ellipse at 50% 80%, #0d1520 0%, #080f18 40%, #040810 100%)",
-    videoSrc: `${GITHUB_RAW}/scenes/citynight.mp4`,
+    videoSrc: "/scenes/citynight.mp4",
     accent: "#3d6080",
-    audioSrc: `${GITHUB_RAW}/audio/citywindow.mp3`,
+    audioSrc: "/audio/citywindow.mp3",
     animationPreset: "rain-city",
     grainOpacity: 0.032,
     vignetteStrength: "normal",
