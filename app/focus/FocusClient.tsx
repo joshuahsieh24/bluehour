@@ -68,6 +68,7 @@ type Action =
   | { type: "RETURN" }
   | { type: "COMPLETE" }
   | { type: "TOGGLE_MUTE" }
+  | { type: "SET_VOLUME"; v: number }
   | { type: "SET_OVERLAY_MODE"; m: OverlayMode }
   | { type: "SHOW_END_MODAL"; show: boolean }
   | { type: "END_CONFIRMED" }
@@ -152,6 +153,8 @@ function reducer(state: State, action: Action): State {
         autoplayBlocked: newMuted ? state.autoplayBlocked : false,
       };
     }
+    case "SET_VOLUME":
+      return { ...state, volume: action.v };
     case "SET_OVERLAY_MODE":
       return { ...state, overlayMode: action.m };
     case "SHOW_END_MODAL":
@@ -356,6 +359,7 @@ export default function FocusClient() {
     if (openFullscreenOnStart && !isFullscreen) {
       toggleFullscreen();
     }
+    setSidebarOpen(false); // collapse for immersion
     dispatch({ type: "START" });
   };
 
@@ -1067,10 +1071,12 @@ function ActiveSession({
         scene={scene}
         paused={isPaused}
         muted={state.muted}
+        volume={state.volume}
         onPauseResume={() =>
           dispatch({ type: isPaused ? "RESUME" : "PAUSE" })
         }
         onMute={() => dispatch({ type: "TOGGLE_MUTE" })}
+        onVolumeChange={(v) => dispatch({ type: "SET_VOLUME", v })}
         onEnd={() => dispatch({ type: "SHOW_END_MODAL", show: true })}
         onFullscreen={onToggleFullscreen}
         isFullscreen={isFullscreen}

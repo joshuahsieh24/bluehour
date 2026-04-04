@@ -7,8 +7,10 @@ interface Props {
   scene: Scene;
   paused: boolean;
   muted: boolean;
+  volume: number;
   onPauseResume: () => void;
   onMute: () => void;
+  onVolumeChange: (v: number) => void;
   onEnd: () => void;
   onFullscreen: () => void;
   isFullscreen: boolean;
@@ -19,13 +21,17 @@ export default function OverlayControls({
   scene,
   paused,
   muted,
+  volume,
   onPauseResume,
   onMute,
+  onVolumeChange,
   onEnd,
   onFullscreen,
   isFullscreen,
   visible,
 }: Props) {
+  const fillPct = Math.round(volume * 100);
+
   return (
     <motion.div
       className="fixed bottom-0 left-0 right-0 flex items-end justify-between px-8 pb-8"
@@ -50,13 +56,30 @@ export default function OverlayControls({
           title={paused ? "Resume (Space)" : "Pause (Space)"}
         />
 
-        {/* Mute / Unmute */}
+        {/* Mute + Volume — grouped together */}
         {scene.audioSrc && (
-          <ControlButton
-            onClick={onMute}
-            label={muted ? "unmute" : "mute"}
-            title={muted ? "Unmute (M)" : "Mute (M)"}
-          />
+          <div className="flex items-center gap-2.5">
+            <ControlButton
+              onClick={onMute}
+              label={muted ? "unmute" : "mute"}
+              title={muted ? "Unmute (M)" : "Mute (M)"}
+            />
+            {/* Volume slider — subtle, atmospheric */}
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.02"
+              value={volume}
+              onChange={(e) => onVolumeChange(parseFloat(e.target.value))}
+              className="volume-slider no-select"
+              title={`Volume ${Math.round(volume * 100)}%`}
+              style={{
+                opacity: muted ? 0.2 : 0.5,
+                background: `linear-gradient(to right, rgba(255,255,255,0.55) ${fillPct}%, rgba(255,255,255,0.14) ${fillPct}%)`,
+              }}
+            />
+          </div>
         )}
 
         {/* End session */}

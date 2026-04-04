@@ -188,3 +188,41 @@ input[type="text"]::placeholder {
   user-select: none;
   -webkit-user-select: none;
 }
+
+/* Volume slider — thin, atmospheric */
+.volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 52px;
+  height: 2px;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  transition: opacity 0.4s ease;
+  vertical-align: middle;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+  background: rgba(255, 255, 255, 0.92);
+  transform: scale(1.25);
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  border: none;
+}
