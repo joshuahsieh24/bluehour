@@ -22,7 +22,8 @@ export type SessionMode =
   | "coding"
   | "reflection";
 
-export type SessionDuration = 25 | 50 | "untimed";
+// Any positive number of minutes, or open-ended
+export type SessionDuration = number | "untimed";
 
 export type FocusState =
   | "pre-session"

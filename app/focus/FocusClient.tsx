@@ -271,22 +271,9 @@ export default function FocusClient() {
     }
   }, [state.phase, state.session]);
 
-  // Interruption detection
-  useEffect(() => {
-    if (state.phase !== "active") return;
-    const handleBlur = () => dispatch({ type: "INTERRUPT" });
-    document.addEventListener("visibilitychange", handleBlur);
-    return () => document.removeEventListener("visibilitychange", handleBlur);
-  }, [state.phase]);
-
-  useEffect(() => {
-    if (state.phase !== "active") return;
-    const handleVis = () => {
-      if (document.hidden) dispatch({ type: "INTERRUPT" });
-    };
-    document.addEventListener("visibilitychange", handleVis);
-    return () => document.removeEventListener("visibilitychange", handleVis);
-  }, [state.phase]);
+  // Intentionally no auto-interrupt on visibility change.
+  // The timer runs continuously — pausing is always an explicit user action.
+  // Navigation or tab switches are not treated as interruptions.
 
   // Warn before unload during active session
   useEffect(() => {
@@ -370,7 +357,7 @@ export default function FocusClient() {
     dispatch({ type: "END_CONFIRMED" });
   };
 
-  const handleDone = (reflection: { completed: "yes" | "partly" | "no"; pulledAway?: string }) => {
+  const handleDone = (note?: string) => {
     if (!state.session) return;
     saveSession({
       id: state.session.id,
@@ -381,8 +368,8 @@ export default function FocusClient() {
       mode: state.session.mode,
       task: state.session.task,
       sceneId: state.session.sceneId,
-      completed: reflection.completed,
-      pulledAway: reflection.pulledAway,
+      completed: "yes",
+      pulledAway: note,
       interruptions: state.session.interruptions,
     });
     dispatch({ type: "GO_AGAIN" });
@@ -410,11 +397,12 @@ export default function FocusClient() {
         dimmed={state.phase === "complete"}
       />
 
-      {/* Audio */}
+      {/* Audio — muted prop combines user mute AND session-paused state
+          so audio naturally pauses/resumes in sync with the timer       */}
       {state.session && (
         <AudioController
           scene={scene}
-          muted={state.muted}
+          muted={state.muted || state.phase === "paused"}
           volume={state.volume}
           active={state.phase === "active" || state.phase === "paused"}
           onAutoplayBlocked={() => dispatch({ type: "AUTOPLAY_BLOCKED" })}
@@ -478,7 +466,7 @@ export default function FocusClient() {
             session={state.session}
             elapsed={state.elapsed}
             onGoAgain={() => dispatch({ type: "GO_AGAIN" })}
-            onDone={handleDone}
+            onDone={(note) => handleDone(note)}
           />
         )}
       </AnimatePresence>
@@ -532,8 +520,28 @@ function PreSession({
   setOpenFullscreenOnStart: (v: boolean) => void;
   taskInputRef: React.RefObject<HTMLInputElement>;
 }) {
-  const DURATIONS: SessionDuration[] = [25, 50, "untimed"];
+  const PRESET_DURATIONS = [25, 50, "untimed"] as const;
   const MODES: SessionMode[] = ["deep work", "writing", "reading", "coding", "reflection"];
+
+  // Custom duration state
+  const [showCustom, setShowCustom] = useState(false);
+  const [customVal, setCustomVal] = useState(() => {
+    // Pre-fill with current custom value if one is active
+    const d = state.duration;
+    return typeof d === "number" && d !== 25 && d !== 50 ? String(d) : "60";
+  });
+  const customInputRef = useRef<HTMLInputElement>(null);
+
+  const isCustomActive =
+    typeof state.duration === "number" && state.duration !== 25 && state.duration !== 50;
+
+  const applyCustom = () => {
+    const v = parseInt(customVal, 10);
+    if (v > 0 && v <= 600) {
+      dispatch({ type: "SET_DURATION", d: v });
+    }
+    setShowCustom(false);
+  };
 
   return (
     <motion.div
@@ -548,14 +556,13 @@ function PreSession({
       <motion.div
         className="relative flex flex-col h-full overflow-y-auto scrollable"
         style={{
-          width: 360,
-          // More translucent than before — lets the scene breathe through
-          background: "rgba(8, 9, 13, 0.62)",
-          backdropFilter: "blur(32px) saturate(1.1)",
-          WebkitBackdropFilter: "blur(32px) saturate(1.1)",
-          // Soft right edge — a fade instead of a hard border
-          borderRight: "1px solid rgba(255,255,255,0.045)",
-          boxShadow: "4px 0 40px rgba(0,0,0,0.3)",
+          width: 348,
+          // Lighter, more translucent — scene breathes through significantly
+          background: "rgba(6, 7, 11, 0.48)",
+          backdropFilter: "blur(28px) saturate(1.15)",
+          WebkitBackdropFilter: "blur(28px) saturate(1.15)",
+          borderRight: "1px solid rgba(255,255,255,0.032)",
+          boxShadow: "4px 0 48px rgba(0,0,0,0.22)",
           zIndex: 25,
         }}
         initial={{ x: -16, opacity: 0 }}
@@ -631,17 +638,75 @@ function PreSession({
 
           {/* Duration */}
           <Section label="how long">
-            <div className="flex gap-2">
-              {DURATIONS.map((d) => (
+            <div className="flex flex-wrap gap-2">
+              {PRESET_DURATIONS.map((d) => (
                 <button
                   key={String(d)}
                   className={`pill ${state.duration === d ? "pill-active" : ""}`}
-                  onClick={() => dispatch({ type: "SET_DURATION", d })}
+                  onClick={() => {
+                    dispatch({ type: "SET_DURATION", d });
+                    setShowCustom(false);
+                  }}
                 >
                   {d === "untimed" ? "untimed" : `${d} min`}
                 </button>
               ))}
+
+              {/* Custom pill */}
+              <button
+                className={`pill ${isCustomActive || showCustom ? "pill-active" : ""}`}
+                onClick={() => {
+                  if (showCustom) {
+                    applyCustom();
+                  } else {
+                    if (isCustomActive) setCustomVal(String(state.duration));
+                    setShowCustom(true);
+                    // Focus the input on next paint
+                    setTimeout(() => customInputRef.current?.focus(), 40);
+                  }
+                }}
+              >
+                {isCustomActive && !showCustom ? `${state.duration} min` : "custom…"}
+              </button>
             </div>
+
+            {/* Inline custom input */}
+            {showCustom && (
+              <div className="flex items-center gap-2 mt-3">
+                <input
+                  ref={customInputRef}
+                  type="number"
+                  min="1"
+                  max="600"
+                  value={customVal}
+                  onChange={(e) => setCustomVal(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") applyCustom();
+                    if (e.key === "Escape") setShowCustom(false);
+                  }}
+                  onBlur={applyCustom}
+                  className="font-light"
+                  style={{
+                    width: 52,
+                    background: "transparent",
+                    border: "none",
+                    borderBottom: "1px solid rgba(255,255,255,0.14)",
+                    color: "rgba(255,255,255,0.72)",
+                    fontSize: 14,
+                    textAlign: "center",
+                    padding: "2px 4px",
+                    outline: "none",
+                    MozAppearance: "textfield",
+                  }}
+                />
+                <span
+                  className="font-light"
+                  style={{ color: "rgba(255,255,255,0.28)", fontSize: 12 }}
+                >
+                  min
+                </span>
+              </div>
+            )}
           </Section>
 
           {/* Mode */}

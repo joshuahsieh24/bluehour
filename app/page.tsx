@@ -1,19 +1,26 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import Link from "next/link";
 import { motion } from "framer-motion";
+import Link from "next/link";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COVER_IMAGE — set to your image URL to replace the CSS gradient with a photo
+// or illustration. When empty, the atmospheric CSS gradient is shown instead.
+// e.g. "https://raw.githubusercontent.com/joshuahsieh24/bluehour/main/public/cover.jpg"
+const COVER_IMAGE = "";
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const starCanvasRef = useRef<HTMLCanvasElement>(null);
 
+  // Star field — canvas only, avoids SSR/hydration mismatch
   useEffect(() => {
-    const canvas = canvasRef.current;
+    const canvas = starCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let raf: number;
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -21,288 +28,294 @@ export default function LandingPage() {
     resize();
     window.addEventListener("resize", resize);
 
-    type Particle = {
-      x: number; y: number;
-      vx: number; vy: number;
-      r: number; o: number;
-      life: number; maxLife: number;
-      hue: number;
-    };
-
-    const particles: Particle[] = [];
-
-    const spawn = (): Particle => ({
-      x: Math.random() * (canvas?.width ?? 1920),
-      // Spawn in the lower half — they drift upward and fade naturally
-      y: (canvas?.height ?? 1080) * 0.55 + Math.random() * (canvas?.height ?? 1080) * 0.4,
-      vx: (Math.random() - 0.5) * 0.1,
-      vy: -0.06 - Math.random() * 0.14,
-      r: 0.3 + Math.random() * 1.1,
-      o: 0,
-      life: 0,
-      maxLife: 400 + Math.random() * 500,
-      hue: 215 + Math.random() * 55,
-    });
-
-    // Seed with staggered lifetimes so page doesn't start empty
-    for (let i = 0; i < 28; i++) {
-      const p = spawn();
-      p.life = Math.random() * p.maxLife;
-      particles.push(p);
-    }
+    const stars = Array.from({ length: 140 }, () => ({
+      x: Math.random(),
+      y: Math.random() * 0.6,
+      r: Math.random() * 0.8 + 0.25,
+      baseOp: Math.random() * 0.6 + 0.12,
+      phase: Math.random() * Math.PI * 2,
+      freq: 0.35 + Math.random() * 0.5,
+    }));
 
     let frame = 0;
-    const draw = () => {
+    const raf = { id: 0 };
+    const render = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      frame++;
-      if (frame % 14 === 0 && particles.length < 40) particles.push(spawn());
-
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.life++;
-        p.x += p.vx;
-        p.y += p.vy;
-        const prog = p.life / p.maxLife;
-        // Softer fade — max opacity is lower so they read as atmosphere, not sparks
-        p.o = prog < 0.2
-          ? (prog / 0.2) * 0.32
-          : prog > 0.78
-          ? ((1 - prog) / 0.22) * 0.32
-          : 0.32;
-
+      const t = frame / 60;
+      stars.forEach((s) => {
+        const twinkle = Math.sin(t * s.freq + s.phase) * 0.11;
+        const op = Math.max(0.04, s.baseOp + twinkle);
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${p.hue}, 60%, 80%, ${p.o * 0.7})`;
+        ctx.arc(s.x * canvas.width, s.y * canvas.height, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(215, 225, 255, ${op})`;
         ctx.fill();
-
-        if (p.life >= p.maxLife) particles.splice(i, 1);
-      }
-
-      raf = requestAnimationFrame(draw);
+      });
+      frame++;
+      raf.id = requestAnimationFrame(render);
     };
-    raf = requestAnimationFrame(draw);
+    raf.id = requestAnimationFrame(render);
 
     return () => {
-      cancelAnimationFrame(raf);
+      cancelAnimationFrame(raf.id);
       window.removeEventListener("resize", resize);
     };
   }, []);
 
   return (
     <div
-      className="fixed inset-0 flex flex-col items-center justify-center overflow-hidden"
-      style={{
-        // Richer blue-hour sky — more violet in the upper register,
-        // warmer indigo mid, soft teal-blue at the "horizon"
-        background: [
-          "radial-gradient(ellipse at 50% 100%, rgba(100, 45, 85, 0.38) 0%, transparent 52%)",
-          "radial-gradient(ellipse at 22% 80%, rgba(65, 35, 110, 0.22) 0%, transparent 42%)",
-          "radial-gradient(ellipse at 78% 88%, rgba(45, 65, 140, 0.18) 0%, transparent 38%)",
-          "linear-gradient(to bottom, #0a1235 0%, #10185a 22%, #18206a 40%, #15215e 58%, #0d1845 78%, #080f2c 100%)",
-        ].join(", "),
-      }}
+      className="fixed inset-0 overflow-hidden no-select"
+      style={{ background: "#05030d" }}
     >
-      {/* Horizon warmth — softer, higher up so no hard bottom band */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse at 48% 92%, rgba(160, 80, 120, 0.18) 0%, rgba(100, 60, 150, 0.08) 35%, transparent 60%)",
-        }}
-      />
 
-      {/* Mid-sky atmospheric depth */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse at 50% 55%, rgba(60, 80, 180, 0.1) 0%, transparent 55%)",
-        }}
-      />
+      {/* ── 1. Background ───────────────────────────────────────────────────── */}
+      {COVER_IMAGE ? (
+        <>
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: `url(${COVER_IMAGE})` }}
+          />
+          {/* Tint for text legibility */}
+          <div className="absolute inset-0" style={{ background: "rgba(3, 2, 10, 0.42)" }} />
+        </>
+      ) : (
+        <>
+          {/* Shinkai-palette sky: deep navy → purple → warm coral horizon → dark ground */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(
+                180deg,
+                #04020c 0%,
+                #0b0826 9%,
+                #160e48 20%,
+                #261872 31%,
+                #412494 41%,
+                #673280 50%,
+                #974470 58%,
+                #c05f62 65%,
+                #d87c4a 70%,
+                #c06838 73%,
+                #170c28 80%,
+                #060310 90%,
+                #020108 100%
+              )`,
+            }}
+          />
 
-      {/* Stars — varied opacity, scattered across upper two-thirds only */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: [
-            "radial-gradient(1px 1px at 8%  14%, rgba(210,225,255,0.55) 0%, transparent 100%)",
-            "radial-gradient(1px 1px at 19% 7%,  rgba(210,225,255,0.35) 0%, transparent 100%)",
-            "radial-gradient(1px 1px at 33% 19%, rgba(210,225,255,0.28) 0%, transparent 100%)",
-            "radial-gradient(1px 1px at 47% 4%,  rgba(210,225,255,0.45) 0%, transparent 100%)",
-            "radial-gradient(1px 1px at 61% 13%, rgba(210,225,255,0.32) 0%, transparent 100%)",
-            "radial-gradient(1px 1px at 72% 6%,  rgba(210,225,255,0.22) 0%, transparent 100%)",
-            "radial-gradient(1px 1px at 84% 21%, rgba(210,225,255,0.4)  0%, transparent 100%)",
-            "radial-gradient(1px 1px at 93% 9%,  rgba(210,225,255,0.3)  0%, transparent 100%)",
-            "radial-gradient(1px 1px at 26% 32%, rgba(210,225,255,0.18) 0%, transparent 100%)",
-            "radial-gradient(1px 1px at 55% 28%, rgba(210,225,255,0.24) 0%, transparent 100%)",
-            "radial-gradient(1px 1px at 79% 36%, rgba(210,225,255,0.16) 0%, transparent 100%)",
-            "radial-gradient(1.5px 1.5px at 41% 11%, rgba(220,235,255,0.6) 0%, transparent 100%)",
-          ].join(", "),
-          // Fade stars out toward the horizon so they feel sky-accurate
-          maskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 55%, transparent 78%)",
-          WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 55%, transparent 78%)",
-        }}
-      />
+          {/* Warm horizon sun-glow */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(
+                ellipse 105% 26% at 50% 69%,
+                rgba(218, 102, 48, 0.55) 0%,
+                rgba(165, 62, 82, 0.28) 44%,
+                transparent 72%
+              )`,
+            }}
+          />
 
-      {/* Particle canvas — atmospheric dust rising from below */}
+          {/* Purple sky ambiance */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(
+                ellipse 72% 36% at 49% 46%,
+                rgba(58, 18, 108, 0.3) 0%,
+                transparent 68%
+              )`,
+            }}
+          />
+
+          {/* Deep top veil */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(to bottom, rgba(3, 1, 12, 0.58) 0%, transparent 26%)`,
+            }}
+          />
+
+          {/* Ground silhouette — dark base */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(to top, rgba(2, 1, 6, 0.95) 0%, rgba(2, 1, 6, 0.5) 9%, transparent 22%)`,
+            }}
+          />
+        </>
+      )}
+
+      {/* ── 2. Stars (canvas) ────────────────────────────────────────────────── */}
       <canvas
-        ref={canvasRef}
+        ref={starCanvasRef}
         className="absolute inset-0 pointer-events-none"
-        style={{ opacity: 0.55 }}
-      />
-
-      {/* Soft bloom behind the content area — the "evening air" around the wordmark */}
-      <div
-        className="absolute pointer-events-none"
         style={{
-          top: "28%",
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: 480,
-          height: 260,
-          background:
-            "radial-gradient(ellipse at 50% 45%, rgba(80, 110, 220, 0.12) 0%, rgba(60, 80, 180, 0.06) 50%, transparent 75%)",
-          filter: "blur(24px)",
+          maskImage:
+            "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 38%, rgba(0,0,0,0.15) 58%, transparent 70%)",
+          WebkitMaskImage:
+            "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 38%, rgba(0,0,0,0.15) 58%, transparent 70%)",
         }}
       />
 
-      {/* Top edge darkening — subtle, not a band */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "linear-gradient(to bottom, rgba(4,7,20,0.55) 0%, rgba(4,7,20,0.1) 18%, transparent 35%, transparent 80%, rgba(4,7,20,0.25) 100%)",
-        }}
-      />
+      {/* ── 3. Film grain ────────────────────────────────────────────────────── */}
+      <div className="grain-overlay" style={{ opacity: 0.02 }} />
 
-      {/* Grain */}
-      <div className="grain-overlay" style={{ opacity: 0.018 }} />
+      {/* ── 4. Vignette ──────────────────────────────────────────────────────── */}
+      <div className="vignette" />
 
-      {/* Content */}
-      <motion.div
-        className="relative z-10 flex flex-col items-center text-center"
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.5, ease: "easeOut" }}
-      >
-        {/* Wordmark */}
-        <motion.h1
-          className="font-light tracking-tight mb-3"
+      {/* ── 5. Content ───────────────────────────────────────────────────────── */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+
+        {/* Atmospheric bloom behind wordmark */}
+        <div
+          className="absolute pointer-events-none"
           style={{
-            fontSize: 54,
-            letterSpacing: "-0.03em",
-            lineHeight: 1,
-            color: "rgba(205, 222, 255, 0.9)",
-            // Layered glow: soft blue halo + faint indigo outer
-            textShadow: [
-              "0 0 40px rgba(100, 130, 230, 0.4)",
-              "0 0 90px rgba(70, 90, 200, 0.18)",
-              "0 2px 12px rgba(0, 0, 30, 0.5)",
-            ].join(", "),
+            width: 400,
+            height: 240,
+            background:
+              "radial-gradient(ellipse, rgba(72, 38, 155, 0.2) 0%, transparent 68%)",
+            filter: "blur(32px)",
+            transform: "translateY(-10px)",
           }}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.2, delay: 0.2 }}
-        >
-          bluehour
-        </motion.h1>
+        />
 
-        {/* Tagline */}
-        <motion.p
-          className="font-light mb-14"
-          style={{
-            color: "rgba(160, 185, 240, 0.42)",
-            fontSize: 13,
-            letterSpacing: "0.09em",
-          }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1.2, delay: 0.5 }}
-        >
-          a place to settle in
-        </motion.p>
-
-        {/* CTAs */}
         <motion.div
-          className="flex flex-col items-center gap-4"
+          className="relative flex flex-col items-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.85 }}
+          transition={{ duration: 2.4, ease: "easeOut" }}
         >
-          <Link
-            href="/focus"
-            className="no-select"
+          {/* Wordmark */}
+          <motion.h1
+            className="font-light"
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              padding: "10px 44px",
-              borderRadius: 999,
-              // Glass pill — picks up the sky colour behind it
-              background: "rgba(100, 130, 210, 0.09)",
-              border: "1px solid rgba(150, 180, 255, 0.18)",
-              color: "rgba(195, 215, 255, 0.85)",
-              fontSize: 13,
-              fontWeight: 300,
-              letterSpacing: "0.09em",
-              textDecoration: "none",
-              transition: "background 500ms ease, border-color 500ms ease, color 400ms ease, box-shadow 500ms ease",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              boxShadow: "0 1px 24px rgba(60, 80, 200, 0.1), inset 0 1px 0 rgba(255,255,255,0.06)",
+              fontSize: "clamp(40px, 5.8vw, 58px)",
+              letterSpacing: "-0.03em",
+              lineHeight: 1,
+              color: "rgba(255, 255, 255, 0.90)",
+              textShadow: [
+                "0 0 55px rgba(135, 105, 240, 0.42)",
+                "0 0 115px rgba(85, 55, 210, 0.16)",
+                "0 2px 20px rgba(0, 0, 22, 0.7)",
+              ].join(", "),
             }}
-            onMouseEnter={(e) => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.background = "rgba(100, 130, 210, 0.16)";
-              el.style.borderColor = "rgba(160, 190, 255, 0.3)";
-              el.style.color = "rgba(215, 230, 255, 0.95)";
-              el.style.boxShadow = "0 1px 32px rgba(80, 110, 220, 0.2), inset 0 1px 0 rgba(255,255,255,0.08)";
-            }}
-            onMouseLeave={(e) => {
-              const el = e.currentTarget as HTMLElement;
-              el.style.background = "rgba(100, 130, 210, 0.09)";
-              el.style.borderColor = "rgba(150, 180, 255, 0.18)";
-              el.style.color = "rgba(195, 215, 255, 0.85)";
-              el.style.boxShadow = "0 1px 24px rgba(60, 80, 200, 0.1), inset 0 1px 0 rgba(255,255,255,0.06)";
-            }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 2.0, delay: 0.18, ease: "easeOut" }}
           >
-            begin
-          </Link>
+            bluehour
+          </motion.h1>
 
-          <Link
-            href="/history"
-            className="font-light no-select"
+          {/* Tagline */}
+          <motion.p
+            className="font-light mt-4"
             style={{
-              color: "rgba(140, 168, 225, 0.3)",
-              fontSize: 12,
-              letterSpacing: "0.06em",
-              textDecoration: "none",
-              transition: "color 450ms ease",
+              fontSize: 11,
+              letterSpacing: "0.24em",
+              color: "rgba(255, 255, 255, 0.24)",
+              textTransform: "uppercase",
             }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.color = "rgba(165, 192, 240, 0.58)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.color = "rgba(140, 168, 225, 0.3)";
-            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 2.0, delay: 0.7, ease: "easeOut" }}
           >
-            history
-          </Link>
+            a place to settle in
+          </motion.p>
+
+          {/* Begin */}
+          <motion.div
+            className="mt-14"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.8, delay: 1.05, ease: "easeOut" }}
+          >
+            <Link
+              href="/focus"
+              style={{
+                display: "block",
+                padding: "11px 46px",
+                fontSize: 13,
+                fontWeight: 300,
+                letterSpacing: "0.15em",
+                color: "rgba(255, 255, 255, 0.80)",
+                background: "rgba(255, 255, 255, 0.062)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                borderRadius: 999,
+                backdropFilter: "blur(16px)",
+                WebkitBackdropFilter: "blur(16px)",
+                boxShadow:
+                  "0 2px 32px rgba(75, 50, 195, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.07)",
+                textDecoration: "none",
+                transition: "all 0.45s ease",
+              }}
+              onMouseEnter={(e) => {
+                Object.assign((e.currentTarget as HTMLElement).style, {
+                  background: "rgba(255, 255, 255, 0.1)",
+                  borderColor: "rgba(255, 255, 255, 0.17)",
+                  color: "rgba(255, 255, 255, 0.94)",
+                  boxShadow:
+                    "0 2px 40px rgba(88, 62, 210, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+                });
+              }}
+              onMouseLeave={(e) => {
+                Object.assign((e.currentTarget as HTMLElement).style, {
+                  background: "rgba(255, 255, 255, 0.062)",
+                  borderColor: "rgba(255, 255, 255, 0.1)",
+                  color: "rgba(255, 255, 255, 0.80)",
+                  boxShadow:
+                    "0 2px 32px rgba(75, 50, 195, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.07)",
+                });
+              }}
+            >
+              Begin
+            </Link>
+          </motion.div>
+
+          {/* History link */}
+          <motion.div
+            className="mt-5"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.8, delay: 1.4, ease: "easeOut" }}
+          >
+            <Link
+              href="/history"
+              className="font-light"
+              style={{
+                fontSize: 11,
+                letterSpacing: "0.1em",
+                color: "rgba(255, 255, 255, 0.19)",
+                textDecoration: "none",
+                transition: "color 0.4s ease",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.color =
+                  "rgba(255, 255, 255, 0.46)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.color =
+                  "rgba(255, 255, 255, 0.19)";
+              }}
+            >
+              history
+            </Link>
+          </motion.div>
         </motion.div>
-      </motion.div>
+      </div>
 
-      {/* Bottom hint */}
+      {/* ── 6. Footer hint ───────────────────────────────────────────────────── */}
       <motion.p
-        className="absolute bottom-7 font-light no-select"
+        className="absolute bottom-7 left-0 right-0 text-center font-light"
         style={{
-          color: "rgba(130, 158, 220, 0.18)",
           fontSize: 10,
-          letterSpacing: "0.1em",
+          letterSpacing: "0.14em",
+          color: "rgba(255, 255, 255, 0.1)",
         }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 1.2, delay: 1.7 }}
+        transition={{ duration: 2.4, delay: 2.1 }}
       >
-        best in fullscreen on a second monitor
+        best on a second monitor · fullscreen
       </motion.p>
     </div>
   );
