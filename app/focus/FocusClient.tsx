@@ -369,6 +369,13 @@ export default function FocusClient() {
 
   const scene = getScene(state.sceneId);
 
+  // Open sidebar automatically when the user pauses — natural return to control
+  useEffect(() => {
+    if (state.phase === "paused") {
+      setSidebarOpen(true);
+    }
+  }, [state.phase]);
+
   // Auto-complete: save session, show graceful summary, reopen sidebar
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -693,7 +700,7 @@ function PreSession({
         />
 
         {/* Header */}
-        <div className="relative flex items-center justify-between px-7 pt-10 pb-8">
+        <div className="relative flex items-center justify-between px-7 pt-8 pb-5">
           <span
             className="font-light"
             style={{ color: "rgba(255,255,255,0.78)", fontSize: 15, letterSpacing: "-0.01em" }}
@@ -718,7 +725,7 @@ function PreSession({
           </div>
         </div>
 
-        <div className="relative flex-1 px-7 flex flex-col pb-4">
+        <div className="relative flex-1 px-7 flex flex-col pb-2">
 
           {/* Completion summary — shown after a session ends, until new session starts */}
           <AnimatePresence>
@@ -829,7 +836,7 @@ function PreSession({
           </Section>
 
           {/* Task input */}
-          <Section label="what needs your attention" className="mt-10">
+          <Section label="what needs your attention" className="mt-7">
             <div
               className="w-full py-2.5"
               style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
@@ -851,7 +858,7 @@ function PreSession({
           </Section>
 
           {/* Duration */}
-          <Section label="how long" className="mt-7">
+          <Section label="how long" className="mt-6">
             <div className="flex flex-wrap gap-2">
               {PRESET_DURATIONS.map((d) => (
                 <button
@@ -939,7 +946,7 @@ function PreSession({
           </Section>
 
           {/* Fullscreen toggle */}
-          <Section label="options" className="mt-9">
+          <Section label="options" className="mt-6">
             <div
               className="flex items-center gap-3 cursor-pointer"
               style={{ color: "rgba(255,255,255,0.38)", fontSize: 12, fontWeight: 300 }}
@@ -970,7 +977,7 @@ function PreSession({
         </div>
 
         {/* Start button — pinned to bottom */}
-        <div className="relative px-7 pb-10 pt-7">
+        <div className="relative px-7 pb-7 pt-5">
           <button
             onClick={onStart}
             className="w-full py-3.5 rounded-xl font-light transition-all duration-500"
