@@ -45,32 +45,33 @@ export default function LandingPage() {
       <div className="grain-overlay" style={{ opacity: 0.022 }} />
 
       {/* ── Content ─────────────────────────────────────────────────────────── */}
-      {/* Text sits in the upper sky — calm deep blue, naturally readable.
-          Soft radial halo behind it just in case of bright content at top. */}
-      <div className="absolute inset-0 flex flex-col items-center" style={{ justifyContent: "flex-start", paddingTop: "13vh" }}>
+      {/* Layout: wordmark + tagline anchored in upper sky (~16vh from top),
+          CTA group pushed down with generous breathing room (~10vh gap).
+          This gives the image more presence and the cover better rhythm.  */}
+      <div className="absolute inset-0 flex flex-col items-center justify-start" style={{ paddingTop: "16vh" }}>
 
-        {/* Halo — keeps text legible over any image content */}
+        {/* Halo behind wordmark — unobtrusive glow, not a hard darkening */}
         <div
           className="pointer-events-none absolute"
           style={{
-            top: "7vh",
+            top: "9vh",
             left: "50%",
             transform: "translateX(-50%)",
-            width: 480,
-            height: 260,
-            background: "radial-gradient(ellipse, rgba(4, 6, 20, 0.48) 0%, transparent 70%)",
-            filter: "blur(28px)",
+            width: 440,
+            height: 220,
+            background: "radial-gradient(ellipse, rgba(4, 6, 20, 0.42) 0%, transparent 72%)",
+            filter: "blur(32px)",
           }}
         />
 
+        {/* Wordmark + tagline */}
         <motion.div
           className="relative flex flex-col items-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 2.4, ease: "easeOut" }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 2.0, ease: "easeOut" }}
         >
-          {/* Wordmark */}
-          <motion.h1
+          <h1
             className="font-light"
             style={{
               fontSize: "clamp(44px, 5.5vw, 62px)",
@@ -78,87 +79,83 @@ export default function LandingPage() {
               lineHeight: 1,
               color: "rgba(255, 255, 255, 0.93)",
               textShadow: [
-                "0 0 52px rgba(110, 148, 255, 0.32)",
-                "0 0 110px rgba(70, 90, 210, 0.12)",
-                "0 2px 20px rgba(0, 0, 28, 0.72)",
+                "0 0 52px rgba(110, 148, 255, 0.28)",
+                "0 0 110px rgba(70, 90, 210, 0.10)",
+                "0 2px 20px rgba(0, 0, 28, 0.68)",
               ].join(", "),
             }}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.8, delay: 0.2, ease: "easeOut" }}
           >
             bluehour
-          </motion.h1>
+          </h1>
 
-          {/* Tagline */}
           <motion.p
-            className="font-light mt-3"
+            className="font-light mt-4"
             style={{
               fontSize: 11,
               letterSpacing: "0.22em",
-              color: "rgba(255, 255, 255, 0.26)",
+              color: "rgba(255, 255, 255, 0.24)",
               textTransform: "uppercase",
-              textShadow: "0 1px 10px rgba(0, 0, 22, 0.65)",
+              textShadow: "0 1px 10px rgba(0, 0, 22, 0.6)",
             }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 1.8, delay: 0.65, ease: "easeOut" }}
+            transition={{ duration: 2.0, delay: 0.5, ease: "easeOut" }}
           >
             a place to settle in
           </motion.p>
+        </motion.div>
 
-          {/* Begin */}
-          <motion.div
-            className="mt-12"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.6, delay: 1.0, ease: "easeOut" }}
-          >
-            <Link
-              href="/focus"
-              style={{
-                display: "block",
-                padding: "11px 48px",
-                fontSize: 13,
-                fontWeight: 300,
-                letterSpacing: "0.15em",
-                color: "rgba(255, 255, 255, 0.82)",
+        {/* CTA group — separated with intentional breathing room */}
+        <motion.div
+          className="flex flex-col items-center"
+          style={{ marginTop: "9vh" }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1.8, delay: 0.9, ease: "easeOut" }}
+        >
+          <Link
+            href="/focus"
+            style={{
+              display: "block",
+              padding: "11px 52px",
+              fontSize: 13,
+              fontWeight: 300,
+              letterSpacing: "0.15em",
+              color: "rgba(255, 255, 255, 0.82)",
+              background: "rgba(255, 255, 255, 0.07)",
+              border: "1px solid rgba(255, 255, 255, 0.11)",
+              borderRadius: 999,
+              backdropFilter: "blur(18px)",
+              WebkitBackdropFilter: "blur(18px)",
+              boxShadow: "0 2px 28px rgba(60, 80, 200, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.07)",
+              textDecoration: "none",
+              transition: "all 0.4s ease",
+            }}
+            onMouseEnter={(e) => {
+              Object.assign((e.currentTarget as HTMLElement).style, {
+                background: "rgba(255, 255, 255, 0.11)",
+                borderColor: "rgba(255, 255, 255, 0.2)",
+                color: "rgba(255, 255, 255, 0.96)",
+                boxShadow: "0 2px 36px rgba(80, 110, 220, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+              });
+            }}
+            onMouseLeave={(e) => {
+              Object.assign((e.currentTarget as HTMLElement).style, {
                 background: "rgba(255, 255, 255, 0.07)",
-                border: "1px solid rgba(255, 255, 255, 0.11)",
-                borderRadius: 999,
-                backdropFilter: "blur(18px)",
-                WebkitBackdropFilter: "blur(18px)",
-                boxShadow: "0 2px 28px rgba(60, 80, 200, 0.13), inset 0 1px 0 rgba(255, 255, 255, 0.07)",
-                textDecoration: "none",
-                transition: "all 0.4s ease",
-              }}
-              onMouseEnter={(e) => {
-                Object.assign((e.currentTarget as HTMLElement).style, {
-                  background: "rgba(255, 255, 255, 0.11)",
-                  borderColor: "rgba(255, 255, 255, 0.2)",
-                  color: "rgba(255, 255, 255, 0.96)",
-                  boxShadow: "0 2px 36px rgba(80, 110, 220, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
-                });
-              }}
-              onMouseLeave={(e) => {
-                Object.assign((e.currentTarget as HTMLElement).style, {
-                  background: "rgba(255, 255, 255, 0.07)",
-                  borderColor: "rgba(255, 255, 255, 0.11)",
-                  color: "rgba(255, 255, 255, 0.82)",
-                  boxShadow: "0 2px 28px rgba(60, 80, 200, 0.13), inset 0 1px 0 rgba(255, 255, 255, 0.07)",
-                });
-              }}
-            >
-              Begin
-            </Link>
-          </motion.div>
+                borderColor: "rgba(255, 255, 255, 0.11)",
+                color: "rgba(255, 255, 255, 0.82)",
+                boxShadow: "0 2px 28px rgba(60, 80, 200, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.07)",
+              });
+            }}
+          >
+            Begin
+          </Link>
 
-          {/* History */}
           <motion.div
-            className="mt-5"
+            style={{ marginTop: 20 }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 1.8, delay: 1.35 }}
+            transition={{ duration: 2.0, delay: 1.3 }}
           >
             <Link
               href="/history"
@@ -166,13 +163,13 @@ export default function LandingPage() {
               style={{
                 fontSize: 11,
                 letterSpacing: "0.1em",
-                color: "rgba(255, 255, 255, 0.2)",
+                color: "rgba(255, 255, 255, 0.18)",
                 textDecoration: "none",
                 transition: "color 0.4s ease",
                 textShadow: "0 1px 8px rgba(0, 0, 20, 0.5)",
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.48)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.2)"; }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.44)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.18)"; }}
             >
               history
             </Link>
