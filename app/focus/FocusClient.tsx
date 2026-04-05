@@ -229,6 +229,12 @@ export default function FocusClient() {
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const idleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownCueFiredRef = useRef(false);
+  // Ref so the tick closure always reads the latest muted/volume without
+  // needing them in the dependency array (which would restart the interval).
+  const mutedRef = useRef(state.muted);
+  const volumeRef = useRef(state.volume);
+  useEffect(() => { mutedRef.current = state.muted; }, [state.muted]);
+  useEffect(() => { volumeRef.current = state.volume; }, [state.volume]);
   const [overlayVisible, setOverlayVisible] = useState(true);
   const [openFullscreenOnStart, setOpenFullscreenOnStart] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -274,7 +280,7 @@ export default function FocusClient() {
           // Soft single-tone cue at 3 seconds remaining — fires once per session window
           if (remaining === 3 && !countdownCueFiredRef.current) {
             countdownCueFiredRef.current = true;
-            playCountdownCue();
+            playCountdownCue(mutedRef.current);
           }
           if (remaining <= 0) {
             dispatch({ type: "COMPLETE" });
@@ -396,7 +402,7 @@ export default function FocusClient() {
     const session = state.session;
     const elapsed = getElapsedSeconds(session);
 
-    playCompletionChime();
+    playCompletionChime(volumeRef.current, mutedRef.current);
 
     saveSession({
       id: session.id,

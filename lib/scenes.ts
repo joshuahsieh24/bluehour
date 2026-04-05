@@ -1,7 +1,7 @@
 import type { Scene } from "./types";
 
 // Videos: served from Vercel edge CDN via public/scenes/ → /scenes/*.mp4
-// Audio:  served from GitHub CDN (files are ~68MB total, excluded from Vercel deploy)
+// Audio:  served from GitHub CDN — excluded from Vercel build output (~68MB total)
 const AUDIO =
   "https://raw.githubusercontent.com/joshuahsieh24/bluehour/main/public/audio";
 
@@ -15,7 +15,7 @@ export const SCENES: Scene[] = [
       "radial-gradient(ellipse at 30% 60%, #1a2535 0%, #111620 40%, #090c12 100%)",
     videoSrc: "/scenes/lofi-cafe.mp4",
     accent: "#4a7ba8",
-    audioSrc: `${AUDIO}/rainyjazz.mp3`,
+    audioSrc: `${AUDIO}/loficafe.mp3`,
     animationPreset: "rain",
     grainOpacity: 0.03,
     vignetteStrength: "normal",
@@ -30,7 +30,7 @@ export const SCENES: Scene[] = [
       "radial-gradient(ellipse at 40% 70%, #0d1829 0%, #080e1a 50%, #050810 100%)",
     videoSrc: "/scenes/hogwarts.mp4",
     accent: "#8b7355",
-    audioSrc: `${AUDIO}/nightjazz.mp3`,
+    audioSrc: `${AUDIO}/hogwart.mp3`,
     animationPreset: "haze",
     grainOpacity: 0.04,
     vignetteStrength: "strong",
@@ -39,13 +39,16 @@ export const SCENES: Scene[] = [
     videoDim: 0.35,
   },
   {
+    // Scene ID kept stable — changing it would break localStorage history.
+    // Video swapped from pianoroom.mp4 → nightstudy.mp4.
+    // Piano audio still fits a warm night-study scene; no audio change.
     id: "piano-room",
     name: "lamplight",
-    description: "amber light, near-silence",
+    description: "one lamp, the work close",
     tagline: "warm and still",
     gradient:
       "radial-gradient(ellipse at 60% 40%, #1f1208 0%, #130d05 45%, #0a0703 100%)",
-    videoSrc: "/scenes/pianoroom.mp4",
+    videoSrc: "/scenes/nightstudy.mp4",
     accent: "#c4813a",
     audioSrc: `${AUDIO}/pianoroom.mp3`,
     animationPreset: "still",
@@ -56,19 +59,25 @@ export const SCENES: Scene[] = [
     videoDim: 0.34,
   },
   {
+    // Scene ID kept stable. Video: moonnight.mp4 → ylia.mp4.
+    // Audio: librarysound.mp3 → kousei.mp3 (Kousei from YLIA — piano, emotional, intimate).
+    // Renamed from "moonlit stacks" — the new pairing is a warm, enclosed interior with
+    // emotional piano music, not a library. "soft room" fits the intimacy of both assets.
     id: "night-library",
-    name: "moonlit stacks",
-    description: "silver light, quiet rows",
-    tagline: "still and attentive",
+    name: "soft room",
+    description: "piano in the dark",
+    tagline: "still and close",
     gradient:
-      "radial-gradient(ellipse at 50% 30%, #14111a 0%, #0d0b12 50%, #080609 100%)",
-    videoSrc: "/scenes/moonnight.mp4",
-    accent: "#7a6f8a",
-    audioSrc: `${AUDIO}/librarysound.mp3`,
-    animationPreset: "dust",
-    grainOpacity: 0.035,
+      "radial-gradient(ellipse at 50% 40%, #1a150d 0%, #100e08 50%, #080704 100%)",
+    videoSrc: "/scenes/ylia.mp4",
+    accent: "#a89070",
+    audioSrc: `${AUDIO}/kousei.mp3`,
+    animationPreset: "still",
+    grainOpacity: 0.03,
     vignetteStrength: "strong",
-    videoDim: 0.38,
+    hazeColor: "rgba(168, 144, 112, 0.05)",
+    hazeOpacity: 0.12,
+    videoDim: 0.36,
   },
   {
     id: "city-window",
