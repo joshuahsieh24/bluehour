@@ -91,6 +91,7 @@ export const SCENES: Scene[] = [
     videoSrc: `${SCENES_CDN}/gojoscene.mp4`,
     accent: "#5058b8",
     audioSrc: `${AUDIO}/citywindow.mp3`,
+    animationPreset: "still",
     grainOpacity: 0.028,
     vignetteStrength: "normal",
     videoDim: 0.22,

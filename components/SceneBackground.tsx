@@ -138,7 +138,7 @@ export default function SceneBackground({ scene, paused = false, dimmed = false 
       {/* ── 4. Gradient drift animation (when no media ready) ───────────────── */}
       {!showVideo && !showImage && (
         <div
-          className={`absolute inset-[-6%] ${paused ? "" : "animate-drift-slow"}`}
+          className={`absolute inset-[-6%] ${paused || scene.animationPreset === "still" ? "" : "animate-drift-slow"}`}
           style={{ background: scene.gradient }}
         />
       )}
