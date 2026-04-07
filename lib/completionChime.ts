@@ -83,10 +83,27 @@ export function playCountdownCue(muted = false): void {
  * @param volume  User's current volume (0–1), default 0.6
  * @param muted   If true, no sound plays at all
  */
+// Pending chime timeout — stored so it can be cancelled if End is pressed
+// before the 400ms delay fires.
+let _chimeTimeout: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * Cancel any pending completion chime that hasn't fired yet.
+ * Call this whenever the session is ended manually so the chime
+ * doesn't land after an intentional End action.
+ */
+export function cancelCompletionChime(): void {
+  if (_chimeTimeout !== null) {
+    clearTimeout(_chimeTimeout);
+    _chimeTimeout = null;
+  }
+}
+
 export function playCompletionChime(volume = 0.6, muted = false): void {
   if (muted) return;
   const targetVolume = Math.min(volume * 0.55, 0.30);
-  setTimeout(() => {
+  _chimeTimeout = setTimeout(() => {
+    _chimeTimeout = null;
     try {
       const audio = new Audio(`${AUDIO_CDN}/chimeending.mp3`);
       audio.volume = targetVolume;

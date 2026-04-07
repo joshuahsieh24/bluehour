@@ -26,7 +26,7 @@ import {
   saveSession,
   updateSessionNote,
 } from "@/lib/storage";
-import { playCompletionChime, playCountdownCue } from "@/lib/completionChime";
+import { playCompletionChime, playCountdownCue, cancelCompletionChime } from "@/lib/completionChime";
 import { getScene } from "@/lib/scenes";
 
 import SceneBackground from "@/components/SceneBackground";
@@ -229,6 +229,9 @@ export default function FocusClient() {
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const idleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownCueFiredRef = useRef(false);
+  // True only when the timer reaches zero on its own — never for manual End.
+  // Guards the completion chime so it doesn't play on intentional early exits.
+  const naturalCompletionRef = useRef(false);
   // Ref so the tick closure always reads the latest muted/volume without
   // needing them in the dependency array (which would restart the interval).
   const mutedRef = useRef(state.muted);
@@ -283,6 +286,7 @@ export default function FocusClient() {
             playCountdownCue(mutedRef.current);
           }
           if (remaining <= 0) {
+            naturalCompletionRef.current = true;
             dispatch({ type: "COMPLETE" });
           }
         }
@@ -402,7 +406,10 @@ export default function FocusClient() {
     const session = state.session;
     const elapsed = getElapsedSeconds(session);
 
-    playCompletionChime(volumeRef.current, mutedRef.current);
+    if (naturalCompletionRef.current) {
+      playCompletionChime(volumeRef.current, mutedRef.current);
+    }
+    naturalCompletionRef.current = false;
 
     saveSession({
       id: session.id,
@@ -444,6 +451,8 @@ export default function FocusClient() {
   };
 
   const handleEndConfirmed = () => {
+    naturalCompletionRef.current = false;
+    cancelCompletionChime();
     dispatch({ type: "END_CONFIRMED" });
   };
 
@@ -643,24 +652,35 @@ function PreSession({
         animate={{ left: sidebarOpen ? 332 : 0 }}
         transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
         style={{
-          width: 16,
-          height: 52,
-          background: "rgba(6, 7, 11, 0.54)",
+          width: 20,
+          height: 64,
+          background: "rgba(8, 9, 14, 0.72)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
-          borderRadius: "0 7px 7px 0",
-          border: "1px solid rgba(255,255,255,0.06)",
+          borderRadius: "0 8px 8px 0",
+          border: "1px solid rgba(255,255,255,0.10)",
           borderLeft: "none",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "rgba(255,255,255,0.32)",
-          fontSize: 11,
+          color: "rgba(255,255,255,0.50)",
+          fontSize: 12,
           cursor: "pointer",
           zIndex: 30,
+          boxShadow: "2px 0 12px rgba(0,0,0,0.28)",
         }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.6)"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.32)"; }}
+        onMouseEnter={(e) => {
+          const el = e.currentTarget as HTMLElement;
+          el.style.color = "rgba(255,255,255,0.82)";
+          el.style.background = "rgba(12,14,20,0.84)";
+          el.style.borderColor = "rgba(255,255,255,0.18)";
+        }}
+        onMouseLeave={(e) => {
+          const el = e.currentTarget as HTMLElement;
+          el.style.color = "rgba(255,255,255,0.50)";
+          el.style.background = "rgba(8,9,14,0.72)";
+          el.style.borderColor = "rgba(255,255,255,0.10)";
+        }}
       >
         {sidebarOpen ? "‹" : "›"}
       </motion.button>
@@ -925,23 +945,24 @@ function PreSession({
             onClick={onStart}
             className="w-full py-3.5 rounded-xl font-light transition-all duration-500"
             style={{
-              background: "rgba(255,255,255,0.07)",
-              border: "1px solid rgba(255,255,255,0.11)",
-              color: "rgba(255,255,255,0.82)",
+              background: "rgba(255,255,255,0.10)",
+              border: "1px solid rgba(255,255,255,0.18)",
+              color: "rgba(255,255,255,0.92)",
               fontSize: 13,
-              letterSpacing: "0.07em",
+              letterSpacing: "0.10em",
+              boxShadow: "0 1px 12px rgba(0,0,0,0.18)",
             }}
             onMouseEnter={(e) => {
               const el = e.currentTarget as HTMLElement;
-              el.style.background = "rgba(255,255,255,0.12)";
-              el.style.borderColor = "rgba(255,255,255,0.2)";
-              el.style.color = "rgba(255,255,255,0.92)";
+              el.style.background = "rgba(255,255,255,0.16)";
+              el.style.borderColor = "rgba(255,255,255,0.28)";
+              el.style.color = "rgba(255,255,255,1)";
             }}
             onMouseLeave={(e) => {
               const el = e.currentTarget as HTMLElement;
-              el.style.background = "rgba(255,255,255,0.07)";
-              el.style.borderColor = "rgba(255,255,255,0.11)";
-              el.style.color = "rgba(255,255,255,0.82)";
+              el.style.background = "rgba(255,255,255,0.10)";
+              el.style.borderColor = "rgba(255,255,255,0.18)";
+              el.style.color = "rgba(255,255,255,0.92)";
             }}
           >
             begin
