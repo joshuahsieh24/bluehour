@@ -42,7 +42,7 @@ export interface Scene {
   videoSrc?: string;         // optional video path (takes priority over image)
   accent: string;            // hex accent color
   audioSrc?: string;         // path to ambient audio
-  animationPreset: AnimationPreset;
+  animationPreset?: AnimationPreset;
   grainOpacity: number;      // 0–1
   vignetteStrength: "normal" | "strong";
   hazeColor?: string;        // for haze overlay
