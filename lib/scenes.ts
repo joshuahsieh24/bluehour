@@ -1,9 +1,12 @@
 import type { Scene } from "./types";
 
 // Videos: served from Vercel edge CDN via public/scenes/ → /scenes/*.mp4
-// Audio:  served from GitHub CDN — excluded from Vercel build output (~68MB total)
+//         Exception: gojoscene.mp4 (65MB) served from GitHub CDN — too large for Vercel Hobby limit
+// Audio:  served from GitHub CDN — excluded from Vercel build output
 const AUDIO =
   "https://raw.githubusercontent.com/joshuahsieh24/bluehour/main/public/audio";
+const SCENES_CDN =
+  "https://raw.githubusercontent.com/joshuahsieh24/bluehour/main/public/scenes";
 
 export const SCENES: Scene[] = [
   {
@@ -85,7 +88,7 @@ export const SCENES: Scene[] = [
     tagline: "the city, just outside",
     gradient:
       "radial-gradient(ellipse at 50% 70%, #08091a 0%, #050610 40%, #020308 100%)",
-    videoSrc: "/scenes/gojoscene.mp4",
+    videoSrc: `${SCENES_CDN}/gojoscene.mp4`,
     accent: "#5058b8",
     audioSrc: `${AUDIO}/citywindow.mp3`,
     grainOpacity: 0.028,
