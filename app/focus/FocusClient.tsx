@@ -388,14 +388,9 @@ export default function FocusClient() {
 
   const scene = getScene(state.sceneId);
 
-  // Pause = controls return; resume = controls recede
-  useEffect(() => {
-    if (state.phase === "paused") {
-      setSidebarOpen(true);
-    } else if (state.phase === "active") {
-      setSidebarOpen(false);
-    }
-  }, [state.phase]);
+  // Sidebar is user-driven during an active session.
+  // Pause no longer auto-opens the setup panel — that breaks immersion.
+  // The pause tray in the center handles resume/end directly.
 
   // On completion: save session, store summary, play chime.
   // No auto-transition — the completion state rests on screen until the user acts.
@@ -1059,27 +1054,36 @@ function ActiveSession({
         animate={{ left: sidebarOpen ? PANEL_W - 1 : 0 }}
         transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
         style={{
-          width: 16,
-          height: 52,
-          background: "rgba(6, 7, 11, 0.54)",
+          width: 20,
+          height: 64,
+          background: "rgba(8, 9, 14, 0.72)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
-          borderRadius: "0 7px 7px 0",
-          border: "1px solid rgba(255,255,255,0.06)",
+          borderRadius: "0 8px 8px 0",
+          border: "1px solid rgba(255,255,255,0.10)",
           borderLeft: "none",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "rgba(255,255,255,0.28)",
-          fontSize: 11,
+          color: "rgba(255,255,255,0.45)",
+          fontSize: 12,
           cursor: "pointer",
           zIndex: 32,
+          boxShadow: "2px 0 12px rgba(0,0,0,0.28)",
           pointerEvents: overlayVisible || sidebarOpen ? "auto" : "none",
           opacity: overlayVisible || sidebarOpen ? 1 : 0,
-          transition: "opacity 0.5s ease, color 0.2s ease",
+          transition: "opacity 0.5s ease, color 0.2s ease, background 0.2s ease",
         }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.6)"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.28)"; }}
+        onMouseEnter={(e) => {
+          const el = e.currentTarget as HTMLElement;
+          el.style.color = "rgba(255,255,255,0.82)";
+          el.style.background = "rgba(12,14,20,0.84)";
+        }}
+        onMouseLeave={(e) => {
+          const el = e.currentTarget as HTMLElement;
+          el.style.color = "rgba(255,255,255,0.45)";
+          el.style.background = "rgba(8,9,14,0.72)";
+        }}
       >
         {sidebarOpen ? "‹" : "›"}
       </motion.button>
@@ -1195,6 +1199,63 @@ function ActiveSession({
             />
           ))}
         </div>
+
+        {/* Pause tray — appears below ring when paused, replaces sidebar auto-open */}
+        <AnimatePresence>
+          {isPaused && (
+            <motion.div
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.36, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+              style={{
+                marginTop: 32,
+                display: "flex",
+                alignItems: "stretch",
+                background: "rgba(7, 8, 12, 0.64)",
+                backdropFilter: "blur(28px)",
+                WebkitBackdropFilter: "blur(28px)",
+                border: "1px solid rgba(255,255,255,0.09)",
+                borderRadius: 12,
+                overflow: "hidden",
+              }}
+            >
+              {/* Resume — primary action */}
+              <button
+                onClick={() => dispatch({ type: "RESUME" })}
+                className="font-light transition-all duration-200"
+                style={{
+                  padding: "13px 26px",
+                  fontSize: 12,
+                  letterSpacing: "0.10em",
+                  color: "rgba(255,255,255,0.85)",
+                  borderRight: "1px solid rgba(255,255,255,0.07)",
+                  cursor: "pointer",
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,1)"; (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.85)"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+              >
+                resume
+              </button>
+              {/* End — secondary, quiet */}
+              <button
+                onClick={() => dispatch({ type: "SHOW_END_MODAL", show: true })}
+                className="font-light transition-all duration-200"
+                style={{
+                  padding: "13px 20px",
+                  fontSize: 11,
+                  letterSpacing: "0.08em",
+                  color: "rgba(255,255,255,0.28)",
+                  cursor: "pointer",
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.58)"; (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.28)"; (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+              >
+                end
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* Bottom controls */}
@@ -1214,25 +1275,6 @@ function ActiveSession({
         visible={shouldShowOverlay}
       />
 
-      {/* Paused label */}
-      <AnimatePresence>
-        {isPaused && (
-          <motion.div
-            className="fixed top-8 left-1/2 -translate-x-1/2"
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.4 }}
-          >
-            <span
-              className="font-light"
-              style={{ color: "rgba(255,255,255,0.28)", fontSize: 11, letterSpacing: "0.12em" }}
-            >
-              paused · press space to resume
-            </span>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.div>
   );
 }
