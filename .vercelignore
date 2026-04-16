@@ -1,4 +1,2 @@
 # Audio files are large — served from GitHub CDN, not deployed.
-# Videos are deployed to Vercel edge, except gojoscene.mp4 (65MB, over Vercel limit).
 public/audio/
-public/scenes/gojoscene.mp4
