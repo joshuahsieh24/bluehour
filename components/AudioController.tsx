@@ -39,7 +39,20 @@ export default function AudioController({
   }, []);
 
   useEffect(() => {
-    if (!scene.audioSrc || !active) return;
+    if (!active) return;
+
+    // Switching to a silent scene (e.g. "still hour") — fade out and stop.
+    // Must happen before the audioSrc guard so we don't leave the previous
+    // Howler instance running when the new scene has no audio.
+    if (!scene.audioSrc) {
+      if (howlRef.current) {
+        const h = howlRef.current;
+        howlRef.current = null;
+        h.fade(h.volume(), 0, 500);
+        setTimeout(() => h.unload(), 600);
+      }
+      return;
+    }
 
     let cancelled = false;
 
