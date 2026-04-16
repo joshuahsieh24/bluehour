@@ -27,7 +27,7 @@ import {
   updateSessionNote,
 } from "@/lib/storage";
 import { playCompletionChime, playCountdownCue, cancelCompletionChime } from "@/lib/completionChime";
-import { getScene } from "@/lib/scenes";
+import { getScene, SCENES } from "@/lib/scenes";
 
 import SceneBackground from "@/components/SceneBackground";
 import ScenePicker from "@/components/ScenePicker";
@@ -1107,56 +1107,108 @@ function ActiveSession({
             exit={{ x: -PANEL_W }}
             transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
           >
-            {/* Header — shows current scene, close tab */}
-            <div className="flex items-center justify-between px-5 pt-6 pb-3 flex-shrink-0">
-              <span
+            {/* Session context — mode · duration · task · current soundscape */}
+            <div className="px-6 pt-8 pb-0 flex-shrink-0">
+              <p
                 className="font-light"
-                style={{ fontSize: 11, color: "rgba(255,255,255,0.32)", letterSpacing: "0.02em" }}
+                style={{ fontSize: 10, color: "rgba(255,255,255,0.22)", letterSpacing: "0.08em" }}
+              >
+                {state.session?.mode ?? "focus"} · {
+                  state.session?.plannedDuration === "untimed"
+                    ? "untimed"
+                    : `${state.session?.plannedDuration ?? "—"} min`
+                }
+              </p>
+              {state.session?.task && (
+                <p
+                  className="font-light mt-2 leading-relaxed"
+                  style={{ fontSize: 13, color: "rgba(255,255,255,0.50)", fontStyle: "italic" }}
+                >
+                  {state.session.task}
+                </p>
+              )}
+              <motion.p
+                key={state.sceneId}
+                className="font-light mt-1.5"
+                style={{ fontSize: 11, color: "rgba(255,255,255,0.26)", letterSpacing: "0.04em" }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.35 }}
               >
                 {scene.name}
-              </span>
+              </motion.p>
+            </div>
+
+            {/* Deliberate breathing room */}
+            <div className="flex-shrink-0" style={{ height: 44 }} />
+
+            {/* Soundscape list */}
+            <div className="px-6 flex-1 overflow-hidden">
+              <p
+                className="font-light mb-5 uppercase"
+                style={{ fontSize: 9, color: "rgba(255,255,255,0.18)", letterSpacing: "0.14em" }}
+              >
+                soundscape
+              </p>
+              <div className="flex flex-col">
+                {SCENES.map((s) => {
+                  const isActive = s.id === state.sceneId;
+                  return (
+                    <motion.button
+                      key={s.id}
+                      type="button"
+                      onClick={() => dispatch({ type: "SET_SCENE", id: s.id })}
+                      className="flex items-center gap-3 text-left py-2.5 font-light w-full"
+                      style={{ cursor: "pointer" }}
+                      animate={{
+                        color: isActive ? "rgba(255,255,255,0.70)" : "rgba(255,255,255,0.22)",
+                      }}
+                      whileHover={{
+                        color: isActive ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.40)",
+                      }}
+                      transition={{ duration: 0.32, ease: "easeOut" }}
+                    >
+                      <motion.span
+                        style={{
+                          width: 4,
+                          height: 4,
+                          borderRadius: "50%",
+                          flexShrink: 0,
+                          display: "block",
+                        }}
+                        animate={{
+                          background: isActive ? scene.accent : "rgba(255,255,255,0.12)",
+                          boxShadow: isActive ? `0 0 5px ${scene.accent}70` : "none",
+                        }}
+                        transition={{ duration: 0.3 }}
+                      />
+                      <span style={{ fontSize: 13, letterSpacing: "0.01em" }}>
+                        {s.name}
+                      </span>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Close hint — pinned bottom */}
+            <div className="px-6 pb-6 pt-4 flex-shrink-0">
               <button
+                type="button"
                 onClick={() => setSidebarOpen(false)}
-                className="font-light transition-all duration-300"
-                style={{ fontSize: 10, letterSpacing: "0.08em", color: "rgba(255,255,255,0.2)", cursor: "pointer" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.5)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.2)"; }}
+                className="font-light"
+                style={{
+                  fontSize: 10,
+                  letterSpacing: "0.08em",
+                  color: "rgba(255,255,255,0.14)",
+                  cursor: "pointer",
+                  transition: "color 0.3s ease",
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.38)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.14)"; }}
               >
                 esc
               </button>
-            </div>
-
-            {/* Scene picker */}
-            <div className="flex-1 overflow-y-auto scrollable px-3 py-4">
-              <ScenePicker
-                selected={state.sceneId}
-                onSelect={(id) => {
-                  dispatch({ type: "SET_SCENE", id });
-                  setSidebarOpen(false);
-                }}
-              />
-            </div>
-
-            {/* Current session info */}
-            <div
-              className="flex-shrink-0 px-5 py-4"
-              style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
-            >
-              {state.session?.task ? (
-                <p
-                  className="font-light leading-relaxed"
-                  style={{ fontSize: 12, color: "rgba(255,255,255,0.32)", fontStyle: "italic" }}
-                >
-                  &ldquo;{state.session.task}&rdquo;
-                </p>
-              ) : (
-                <p
-                  className="font-light"
-                  style={{ fontSize: 11, color: "rgba(255,255,255,0.18)", letterSpacing: "0.06em" }}
-                >
-                  {state.session?.mode ?? "focus"}
-                </p>
-              )}
             </div>
           </motion.div>
         )}

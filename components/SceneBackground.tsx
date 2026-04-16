@@ -83,6 +83,7 @@ export default function SceneBackground({ scene, paused = false, dimmed = false 
             onCanPlay={() => setVideoReady(true)}
             onError={() => setVideoError(true)}
             className="absolute inset-0 w-full h-full object-cover"
+            style={{ objectPosition: "center bottom" }}
           />
 
           {/* Single darkening pass — consolidates videoDim + cinematic gradient
@@ -124,7 +125,7 @@ export default function SceneBackground({ scene, paused = false, dimmed = false 
                 transition={{ duration: 1.2, ease: "easeInOut" }}
               >
                 <div
-                  className={`absolute inset-[-6%] bg-cover bg-center ${
+                  className={`absolute inset-[-6%] bg-cover bg-bottom ${
                     paused ? "" : "animate-drift-slow"
                   }`}
                   style={{ backgroundImage: `url(${scene.imageSrc})` }}
