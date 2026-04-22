@@ -17,10 +17,12 @@
  *   - muted === true → complete silence, no exceptions
  */
 
-// Audio served from GitHub CDN — same pattern as ambient scene audio.
-// All audio is excluded from Vercel build output via .vercelignore.
+// Audio served from CloudFront (NEXT_PUBLIC_AUDIO_CDN) in production.
+// Falls back to /audio (local public/) when the env var is absent.
 const AUDIO_CDN =
-  "https://raw.githubusercontent.com/joshuahsieh24/bluehour/main/public/audio";
+  (typeof process !== "undefined"
+    ? process.env.NEXT_PUBLIC_AUDIO_CDN?.replace(/\/$/, "")
+    : undefined) ?? "/audio";
 
 // Shared AudioContext — lazily created, reused across calls
 let _ctx: AudioContext | null = null;

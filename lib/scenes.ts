@@ -1,9 +1,11 @@
 import type { Scene } from "./types";
 
 // Videos: served from Vercel edge CDN via public/scenes/ → /scenes/*.mp4
-// Audio:  served from GitHub CDN — excluded from Vercel build output
+// Audio:  served from CloudFront (NEXT_PUBLIC_AUDIO_CDN) in production.
+//         Falls back to /audio (local public/) when the env var is absent,
+//         so `next dev` works out of the box with no env setup.
 const AUDIO =
-  "https://raw.githubusercontent.com/joshuahsieh24/bluehour/main/public/audio";
+  process.env.NEXT_PUBLIC_AUDIO_CDN?.replace(/\/$/, "") ?? "/audio";
 
 export const SCENES: Scene[] = [
   {
