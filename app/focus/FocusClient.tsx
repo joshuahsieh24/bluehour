@@ -243,6 +243,21 @@ export default function FocusClient() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [completionSummary, setCompletionSummary] = useState<CompletionSummary | null>(null);
   const taskInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; });
+
+  // Freeze the timer in localStorage when the page is hidden/closed so that
+  // elapsed time doesn't accumulate while the tab is gone.
+  useEffect(() => {
+    const handler = () => {
+      const { phase, session } = stateRef.current;
+      if (phase === "active" && session && !session.pausedAt) {
+        saveActiveSession({ ...session, pausedAt: Date.now() });
+      }
+    };
+    window.addEventListener("pagehide", handler);
+    return () => window.removeEventListener("pagehide", handler);
+  }, []);
 
   // Init from localStorage
   useEffect(() => {
