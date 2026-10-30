@@ -26,8 +26,9 @@ import {
   saveSession,
   updateSessionNote,
 } from "@/lib/storage";
-import { playCompletionChime, playCountdownCue, cancelCompletionChime } from "@/lib/completionChime";
-import { getScene, SCENES } from "@/lib/scenes";
+import { audioEngine } from "@/lib/audioEngine";
+import { useAmbientAudio, useAudioEngineState } from "@/lib/useAmbientAudio";
+import { getScene, SCENES, CHIME_SRC, audioFallbackSrc } from "@/lib/scenes";
 
 import SceneBackground from "@/components/SceneBackground";
 import ScenePicker from "@/components/ScenePicker";
@@ -37,7 +38,6 @@ import ReturnOverlay from "@/components/ReturnOverlay";
 import CompletionCard from "@/components/CompletionCard";
 import EndSessionModal from "@/components/EndSessionModal";
 import RecoveryOverlay from "@/components/RecoveryOverlay";
-import AudioController from "@/components/AudioController";
 import { useFullscreen } from "@/components/FullscreenToggle";
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -53,7 +53,6 @@ interface State {
   volume: number;
   overlayMode: OverlayMode;
   recoverySession: ActiveSession | null;
-  autoplayBlocked: boolean;
   showEndModal: boolean;
   elapsed: number;
 }
@@ -77,7 +76,6 @@ type Action =
   | { type: "END_CONFIRMED" }
   | { type: "RESUME_RECOVERY" }
   | { type: "DISCARD_RECOVERY" }
-  | { type: "AUTOPLAY_BLOCKED" }
   | { type: "TICK"; elapsed: number }
   | { type: "GO_AGAIN" };
 
@@ -147,15 +145,8 @@ function reducer(state: State, action: Action): State {
     }
     case "COMPLETE":
       return { ...state, phase: "complete" };
-    case "TOGGLE_MUTE": {
-      const newMuted = !state.muted;
-      return {
-        ...state,
-        muted: newMuted,
-        // Clear the autoplay block once the user unmutes so the banner hides
-        autoplayBlocked: newMuted ? state.autoplayBlocked : false,
-      };
-    }
+    case "TOGGLE_MUTE":
+      return { ...state, muted: !state.muted };
     case "SET_VOLUME":
       return { ...state, volume: action.v };
     case "SET_OVERLAY_MODE":
@@ -177,10 +168,6 @@ function reducer(state: State, action: Action): State {
     }
     case "DISCARD_RECOVERY":
       return { ...state, recoverySession: null };
-    case "AUTOPLAY_BLOCKED":
-      // Also mute state so TOGGLE_MUTE can flip it back to false,
-      // which triggers AudioController's re-play attempt
-      return { ...state, autoplayBlocked: true, muted: true };
     case "TICK":
       return { ...state, elapsed: action.elapsed };
     case "GO_AGAIN":
@@ -207,7 +194,6 @@ const INITIAL_STATE: State = {
   volume: 0.6,
   overlayMode: "minimal",
   recoverySession: null,
-  autoplayBlocked: false,
   showEndModal: false,
   elapsed: 0,
 };
@@ -298,7 +284,7 @@ export default function FocusClient() {
           // Soft single-tone cue at 3 seconds remaining — fires once per session window
           if (remaining === 3 && !countdownCueFiredRef.current) {
             countdownCueFiredRef.current = true;
-            playCountdownCue(mutedRef.current);
+            if (!mutedRef.current) audioEngine.playCue();
           }
           if (remaining <= 0) {
             naturalCompletionRef.current = true;
@@ -403,6 +389,19 @@ export default function FocusClient() {
 
   const scene = getScene(state.sceneId);
 
+  // Audio: one engine owns every element for the life of the page; the UI only
+  // pushes intent. The engine unlocks itself on the first gesture, so play()
+  // is never attempted from an effect, a timer or a dynamic import.
+  useAmbientAudio({
+    src: scene.audioSrc ?? null,
+    fallbackSrc: audioFallbackSrc(scene.audioSrc),
+    playing: state.phase === "active",
+    muted: state.muted,
+    volume: state.volume,
+  });
+  useEffect(() => { audioEngine.preloadChime(CHIME_SRC, audioFallbackSrc(CHIME_SRC)); }, []);
+  const { blocked: audioBlocked } = useAudioEngineState();
+
   // Sidebar is user-driven during an active session.
   // Pause no longer auto-opens the setup panel — that breaks immersion.
   // The pause tray in the center handles resume/end directly.
@@ -417,7 +416,7 @@ export default function FocusClient() {
     const elapsed = getElapsedSeconds(session);
 
     if (naturalCompletionRef.current) {
-      playCompletionChime(volumeRef.current, mutedRef.current);
+      if (!mutedRef.current) audioEngine.playChime(volumeRef.current);
     }
     naturalCompletionRef.current = false;
 
@@ -462,7 +461,7 @@ export default function FocusClient() {
 
   const handleEndConfirmed = () => {
     naturalCompletionRef.current = false;
-    cancelCompletionChime();
+    audioEngine.cancelChime();
     dispatch({ type: "END_CONFIRMED" });
   };
 
@@ -487,18 +486,6 @@ export default function FocusClient() {
         paused={state.phase === "paused"}
         dimmed={state.phase === "complete"}
       />
-
-      {/* Audio — muted prop combines user mute AND session-paused state
-          so audio naturally pauses/resumes in sync with the timer       */}
-      {state.session && (
-        <AudioController
-          scene={scene}
-          muted={state.muted || state.phase === "paused"}
-          volume={state.volume}
-          active={state.phase === "active" || state.phase === "paused"}
-          onAutoplayBlocked={() => dispatch({ type: "AUTOPLAY_BLOCKED" })}
-        />
-      )}
 
       {/* Recovery overlay */}
       <AnimatePresence>
@@ -576,7 +563,7 @@ export default function FocusClient() {
 
       {/* Autoplay blocked notice */}
       <AnimatePresence>
-        {state.autoplayBlocked && state.phase === "active" && (
+        {audioBlocked && state.phase === "active" && !state.muted && !!scene.audioSrc && (
           <motion.div
             className="fixed bottom-20 left-1/2 -translate-x-1/2"
             style={{ zIndex: 40 }}
@@ -586,7 +573,7 @@ export default function FocusClient() {
             transition={{ duration: 0.4 }}
           >
             <button
-              onClick={() => dispatch({ type: "TOGGLE_MUTE" })}
+              onClick={() => audioEngine.unlock()}
               className="glass-panel-light px-4 py-2 rounded-full text-xs font-light"
               style={{ color: "rgba(255,255,255,0.45)", letterSpacing: "0.04em" }}
             >
@@ -702,8 +689,8 @@ function PreSession({
           width: 348,
           flexShrink: 0,
           background: "rgba(6, 7, 11, 0.48)",
-          backdropFilter: "blur(28px) saturate(1.15)",
-          WebkitBackdropFilter: "blur(28px) saturate(1.15)",
+          backdropFilter: "blur(20px) saturate(1.15)",
+          WebkitBackdropFilter: "blur(20px) saturate(1.15)",
           borderRight: "1px solid rgba(255,255,255,0.032)",
           boxShadow: "4px 0 48px rgba(0,0,0,0.22)",
           zIndex: 25,
@@ -1111,8 +1098,8 @@ function ActiveSession({
             style={{
               width: PANEL_W,
               background: "rgba(5, 6, 9, 0.58)",
-              backdropFilter: "blur(28px) saturate(1.1)",
-              WebkitBackdropFilter: "blur(28px) saturate(1.1)",
+              backdropFilter: "blur(20px) saturate(1.1)",
+              WebkitBackdropFilter: "blur(20px) saturate(1.1)",
               borderRight: "1px solid rgba(255,255,255,0.04)",
               boxShadow: "4px 0 40px rgba(0,0,0,0.28)",
               zIndex: 31,
@@ -1280,8 +1267,8 @@ function ActiveSession({
                 display: "flex",
                 alignItems: "stretch",
                 background: "rgba(7, 8, 12, 0.64)",
-                backdropFilter: "blur(28px)",
-                WebkitBackdropFilter: "blur(28px)",
+                backdropFilter: "blur(20px)",
+                WebkitBackdropFilter: "blur(20px)",
                 border: "1px solid rgba(255,255,255,0.09)",
                 borderRadius: 12,
                 overflow: "hidden",

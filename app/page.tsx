@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function LandingPage() {
   return (
@@ -10,16 +11,21 @@ export default function LandingPage() {
       {/* ── Background ──────────────────────────────────────────────────────── */}
       <motion.div
         className="absolute inset-0"
-        style={{
-          backgroundImage: "url(/scenes/animesky4k.jpg)",
-          backgroundSize: "cover",
-          backgroundPosition: "center center",
-          backgroundRepeat: "no-repeat",
-        }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 2.0, ease: "easeInOut" }}
-      />
+      >
+        {/* next/image: served resized + AVIF/WebP per device instead of one 6 MB JPEG */}
+        <Image
+          src="/cover/animesky.webp"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          quality={82}
+          style={{ objectFit: "cover", objectPosition: "center center" }}
+        />
+      </motion.div>
 
       {/* ── Overlay — single restrained pass ────────────────────────────────
            The upper sky is naturally dark blue/purple. Only the very top

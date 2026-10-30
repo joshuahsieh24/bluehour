@@ -1,11 +1,26 @@
 import type { Scene } from "./types";
 
-// Videos: served from Vercel edge CDN via public/scenes/ → /scenes/*.mp4
+// Videos + posters: served from Vercel's edge CDN via public/scenes/v2/
+//         (versioned path → immutable cache headers, see next.config.mjs;
+//         regenerate with scripts/encode-scenes.sh).
 // Audio:  served from CloudFront (NEXT_PUBLIC_AUDIO_CDN) in production.
-//         Falls back to /audio (local public/) when the env var is absent,
-//         so `next dev` works out of the box with no env setup.
+//         Falls back to /audio (local public/, gitignored) when the env var
+//         is absent, so `next dev` works out of the box with no env setup.
 const AUDIO =
   process.env.NEXT_PUBLIC_AUDIO_CDN?.replace(/\/$/, "") ?? "/audio";
+
+const VIDEO = "/scenes/v2";
+
+export const CHIME_SRC = `${AUDIO}/chimeending.mp3`;
+
+/**
+ * Same file on the app's own origin, used by the audio engine if the CDN copy
+ * fails to load. Null when audio already comes from the local fallback.
+ */
+export function audioFallbackSrc(src: string | undefined): string | null {
+  if (!src || AUDIO === "/audio") return null;
+  return `/audio/${src.split("/").pop()}`;
+}
 
 export const SCENES: Scene[] = [
   {
@@ -15,7 +30,8 @@ export const SCENES: Scene[] = [
     tagline: "quiet after the rain",
     gradient:
       "radial-gradient(ellipse at 30% 60%, #1a2535 0%, #111620 40%, #090c12 100%)",
-    videoSrc: "/scenes/lofi-cafe.mp4",
+    videoSrc: `${VIDEO}/lofi-cafe.mp4`,
+    posterSrc: `${VIDEO}/lofi-cafe.webp`,
     accent: "#4a7ba8",
     audioSrc: `${AUDIO}/loficafe.mp3`,
     grainOpacity: 0.03,
@@ -29,7 +45,8 @@ export const SCENES: Scene[] = [
     tagline: "late and still",
     gradient:
       "radial-gradient(ellipse at 40% 70%, #0d1829 0%, #080e1a 50%, #050810 100%)",
-    videoSrc: "/scenes/hogwarts.mp4",
+    videoSrc: `${VIDEO}/hogwarts.mp4`,
+    posterSrc: `${VIDEO}/hogwarts.webp`,
     accent: "#8b7355",
     audioSrc: `${AUDIO}/hogwart.mp3`,
     animationPreset: "haze",
@@ -49,7 +66,8 @@ export const SCENES: Scene[] = [
     tagline: "warm and still",
     gradient:
       "radial-gradient(ellipse at 60% 40%, #1f1208 0%, #130d05 45%, #0a0703 100%)",
-    videoSrc: "/scenes/nightstudy.mp4",
+    videoSrc: `${VIDEO}/nightstudy.mp4`,
+    posterSrc: `${VIDEO}/nightstudy.webp`,
     accent: "#c4813a",
     audioSrc: `${AUDIO}/pianoroom.mp3`,
     animationPreset: "still",
@@ -70,7 +88,8 @@ export const SCENES: Scene[] = [
     tagline: "still and close",
     gradient:
       "radial-gradient(ellipse at 50% 40%, #1a150d 0%, #100e08 50%, #080704 100%)",
-    videoSrc: "/scenes/ylia.mp4",
+    videoSrc: `${VIDEO}/ylia.mp4`,
+    posterSrc: `${VIDEO}/ylia.webp`,
     accent: "#a89070",
     audioSrc: `${AUDIO}/kousei.mp3`,
     animationPreset: "still",
@@ -87,7 +106,8 @@ export const SCENES: Scene[] = [
     tagline: "the city, just outside",
     gradient:
       "radial-gradient(ellipse at 50% 70%, #08091a 0%, #050610 40%, #020308 100%)",
-    videoSrc: "/scenes/charlie-snoopy.mp4",
+    videoSrc: `${VIDEO}/charlie-snoopy.mp4`,
+    posterSrc: `${VIDEO}/charlie-snoopy.webp`,
     accent: "#5058b8",
     audioSrc: `${AUDIO}/citywindow.mp3`,
     animationPreset: "still",
