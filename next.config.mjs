@@ -16,6 +16,12 @@ const nextConfig = {
     return [
       { source: "/scenes/:path*", headers: IMMUTABLE },
       { source: "/cover/:path*", headers: IMMUTABLE },
+      // Ambient tracks are served from public/audio by Vercel's CDN. Their
+      // names are not versioned, so cache for 30 days rather than forever.
+      {
+        source: "/audio/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=2592000" }],
+      },
     ];
   },
 };

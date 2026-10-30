@@ -3,9 +3,10 @@ import type { Scene } from "./types";
 // Videos + posters: served from Vercel's edge CDN via public/scenes/v2/
 //         (versioned path → immutable cache headers, see next.config.mjs;
 //         regenerate with scripts/encode-scenes.sh).
-// Audio:  served from CloudFront (NEXT_PUBLIC_AUDIO_CDN) in production.
-//         Falls back to /audio (local public/, gitignored) when the env var
-//         is absent, so `next dev` works out of the box with no env setup.
+// Audio:  public/audio/*.mp3, served by Vercel's CDN at /audio (default).
+//         Set NEXT_PUBLIC_AUDIO_CDN to serve from the optional CloudFront
+//         stack in infra/bluehour instead; the engine falls back to /audio
+//         if that origin fails.
 const AUDIO =
   process.env.NEXT_PUBLIC_AUDIO_CDN?.replace(/\/$/, "") ?? "/audio";
 

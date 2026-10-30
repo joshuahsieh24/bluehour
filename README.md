@@ -177,8 +177,11 @@ intent through `useAmbientAudio()` (`lib/useAmbientAudio.ts`) and read
 `blocked` from `useAudioEngineState()` to show the "start audio" prompt. This is
 what makes playback reliable on Safari/iOS, where play() permission is tracked
 per element and anything created after an effect, a timer or a dynamic import
-is refused. If the CDN copy of a track fails to load, the engine falls back to
-the same file under `/audio/` on the app's own origin.
+is refused.
+
+Tracks ship in `public/audio/` and are served by Vercel's CDN at `/audio/` (30-day
+cache). `NEXT_PUBLIC_AUDIO_CDN` optionally points at the CloudFront stack in
+`infra/bluehour`; if that origin fails to load, the engine falls back to `/audio/`.
 
 **Video** — scene clips live in `public/scenes/v2/` (≤1440p, 30 fps, faststart,
 no audio track) with a WebP poster per scene that paints before the first frame
@@ -205,5 +208,5 @@ npm run eval:perf            # add --scenes rainy-cafe,city-window to narrow
 For a one-off look in DevTools, paste `scripts/perf-probe.js` into the console on
 `/focus` and run `await window.__bhProbe(6000)`.
 
-Local dev falls back to `/audio/*.mp3` (gitignored `public/audio/`); set
-`NEXT_PUBLIC_AUDIO_CDN` in `.env.local` to exercise the CDN path.
+Set `NEXT_PUBLIC_AUDIO_CDN` in `.env.local` to exercise the CDN path locally;
+leave it unset to test the default `/audio/` path.

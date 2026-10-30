@@ -42,5 +42,3 @@ next-env.d.ts
 *.tfstate.lock.info
 .terraform.lock.hcl
 
-# ambient audio lives on the CDN (infra/bluehour); local copies for `next dev` only
-/public/audio/
