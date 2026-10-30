@@ -38,8 +38,8 @@ export interface Scene {
   description: string;       // short evocative caption
   tagline: string;           // audio/mood descriptor shown in picker
   gradient: string;          // CSS gradient fallback (always shown)
-  imageSrc?: string;         // optional still image path
-  videoSrc?: string;         // optional video path (takes priority over image)
+  videoSrc?: string;         // optional video path
+  posterSrc?: string;        // first frame of the video — paints before it decodes
   accent: string;            // hex accent color
   audioSrc?: string;         // path to ambient audio
   animationPreset?: AnimationPreset;

@@ -137,7 +137,6 @@ components/
   CompletionCard        Session complete + reflection prompts
   EndSessionModal       Confirm end-session dialog
   RecoveryOverlay       Session recovery after page reload
-  AudioController       Howler.js wrapper (client-side only)
   FullscreenToggle      useFullscreen() hook
 ```
 
@@ -165,3 +164,49 @@ components/
 - Streaks, charts, analytics
 - Social features
 - Mobile layout
+
+---
+
+## Media architecture
+
+**Audio** — `lib/audioEngine.ts` is the single owner of every sound. It creates a
+fixed set of `<audio>` elements once (two ambient players for crossfades, one
+chime), unlocks them synchronously inside the first user gesture, and reuses
+them forever by swapping `src`. Components never create players; they push
+intent through `useAmbientAudio()` (`lib/useAmbientAudio.ts`) and read
+`blocked` from `useAudioEngineState()` to show the "start audio" prompt. This is
+what makes playback reliable on Safari/iOS, where play() permission is tracked
+per element and anything created after an effect, a timer or a dynamic import
+is refused.
+
+Tracks ship in `public/audio/` and are served by Vercel's CDN at `/audio/` (30-day
+cache). `NEXT_PUBLIC_AUDIO_CDN` optionally points at the CloudFront stack in
+`infra/bluehour`; if that origin fails to load, the engine falls back to `/audio/`.
+
+**Video** — scene clips live in `public/scenes/v2/` (≤1440p, 30 fps, faststart,
+no audio track) with a WebP poster per scene that paints before the first frame
+decodes. The background stack uses plain alpha layers only (no blend modes), is
+paused while the tab is hidden, and the path is versioned so `next.config.mjs`
+can serve it with a one-year immutable cache. Re-encode new sources with:
+
+```bash
+scripts/encode-scenes.sh <dir-with-source-mp4s>
+```
+
+## Performance evals
+
+`scripts/perf-eval.mjs` drives the production build in a visible Chrome window
+(via `playwright-core`, no browser download) and reports frame pacing, dropped
+video frames, bytes transferred and whether audio survives begin / mute toggle /
+pause+resume / scene switch, per scene:
+
+```bash
+npm run build && npx next start -p 3100 &
+npm run eval:perf            # add --scenes rainy-cafe,city-window to narrow
+```
+
+For a one-off look in DevTools, paste `scripts/perf-probe.js` into the console on
+`/focus` and run `await window.__bhProbe(6000)`.
+
+Set `NEXT_PUBLIC_AUDIO_CDN` in `.env.local` to exercise the CDN path locally;
+leave it unset to test the default `/audio/` path.
